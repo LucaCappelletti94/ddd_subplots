@@ -18,8 +18,6 @@ Since some software handling coverages sometime get slightly different results, 
 
 |coveralls| |sonar_coverage| |code_climate_coverage|
 
-Python package making it easier to handle mixed 3d and 2d subplots.
-
 
 .. |travis| image:: https://travis-ci.org/LucaCappelletti94/ddd_subplots.png
    :target: https://travis-ci.org/LucaCappelletti94/ddd_subplots

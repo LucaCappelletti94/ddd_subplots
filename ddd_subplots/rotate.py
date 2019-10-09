@@ -43,6 +43,8 @@ def rotate(func: Callable, xs: np.ndarray, ys: np.ndarray, zs: np.ndarray, path:
             total=len(tasks),
             desc="Rendering frames",
             disable=not verbose))
+        p.close()
+        p.join()
 
     with imageio.get_writer(path, mode='I', fps=fps) as writer:
         for task in tqdm(tasks, disable=not verbose):
