@@ -1,5 +1,6 @@
 from ddd_subplots import subplots
 import numpy as np
+import os
 from sklearn import datasets
 from sklearn.decomposition import PCA
 
@@ -15,3 +16,4 @@ def test_subplots():
 
     fig.tight_layout()
     fig.savefig("test.png")
+    os.remove("test.png")

@@ -7,6 +7,9 @@ addons:
     organization: lucacappelletti94-github
     token:
       secure: Sk0S7l+L7KldrkQWLJhvChpaHWBOb0YoTgHR9KBkXUPMdy6m83VyLS3/bmcNdCWg4+Ga2L1aicYHc3A1+eyXfhburFWIf116mztWcQmko5tGvLKhqQBABd+KfolmHsy8VEBDLnE7JAOGT+KhfszD7rrv0YYCdNUimkCvhhu5MO+ww9dWbHfDPlxCkS10vbKJ3ZkjR4Lt8nVZKwB0y30AnVMJhDpC9zBowgXgVVsEgj68rtLgfLydMWKtGr8OpfMn0IpX615Jssp985eIxzd7EihkyHwDyQELSWZnuNHzXNaWyIqt9pqiheI0lFdX9w5zjrZwkPV5nWhjz9eaoj8hqnNwCZnigsBU3NcpDeBIrGpkc5bAzq8ytxR92e8YFwlCN38SxjLvNnFrkdrD+ToIlvIQl4LGx3TjkZeNgexvPUInZCTvXre4aWo4qOG2kaKj0iMHgA4Aho8WZjLRQl+a3i8sH8h/G3mX/smbRMITzYq1cqw0sl2nPNM0Afk/1wd/b8GuWVlbilBhGUH+kdM+tQcuixg6aEtQeVkek7Rk7nWPWgPpA7kcel5nL1jvt9eMKE6cQQ+e2Uve9NUP/rRKYCodXgJItGLRagLN1SLyolKrpInJYHOWb96qKSXjC8M//P+MjBqyzGBuciEJwRkm5jXVu6WY7aBFwPBcV5pb4X0=
+  apt:
+    packages:
+      - gifsicle
 language: python
 python:
 - '3.6'
