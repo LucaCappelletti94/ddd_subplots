@@ -1,6 +1,5 @@
 from matplotlib.axis import Axis
 import numpy as np
-from decorator import decorator
 from typing import Callable, Tuple
 from tqdm.auto import tqdm
 import os
