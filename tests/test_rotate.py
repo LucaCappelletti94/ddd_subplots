@@ -23,4 +23,3 @@ def test_rotate():
     X_reduced = PCA(n_components=3).fit_transform(X)
     colors = np.array(["red", "green", "blue"])[y]
     rotate(my_func, *X_reduced.T, path="test.gif", duration=2, fps=24, depthshade=False, c=colors, marker='o', s=20)
-    os.remove("test.gif")

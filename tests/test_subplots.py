@@ -16,4 +16,3 @@ def test_subplots():
 
     fig.tight_layout()
     fig.savefig("test.png")
-    os.remove("test.png")

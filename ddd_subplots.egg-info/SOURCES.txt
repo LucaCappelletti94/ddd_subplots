@@ -1,0 +1,12 @@
+MANIFEST.in
+README.rst
+setup.py
+ddd_subplots/__init__.py
+ddd_subplots/__version__.py
+ddd_subplots/rotate.py
+ddd_subplots/subplots.py
+ddd_subplots.egg-info/PKG-INFO
+ddd_subplots.egg-info/SOURCES.txt
+ddd_subplots.egg-info/dependency_links.txt
+ddd_subplots.egg-info/requires.txt
+ddd_subplots.egg-info/top_level.txt

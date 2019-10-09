@@ -41,12 +41,12 @@ Python package making it easier to handle mixed 3d and 2d subplots.
     :target: https://coveralls.io/github/LucaCappelletti94/ddd_subplots?branch=master
     :alt: Coveralls Coverage
 
-.. |pip| image:: https://badge.fury.io/py/ddd_subplots.svg
-    :target: https://badge.fury.io/py/ddd_subplots
+.. |pip| image:: https://badge.fury.io/py/ddd-subplots.svg
+    :target: https://badge.fury.io/py/ddd-subplots
     :alt: Pypi project
 
-.. |downloads| image:: https://pepy.tech/badge/ddd_subplots
-    :target: https://pepy.tech/badge/ddd_subplots
+.. |downloads| image:: https://pepy.tech/badge/ddd-subplots
+    :target: https://pepy.tech/badge/ddd-subplots
     :alt: Pypi total project downloads 
 
 .. |codacy|  image:: https://api.codacy.com/project/badge/Grade/07125d5f5f4d4d1a838349b004553cd4
