@@ -18,7 +18,11 @@ def rotate_z(x: np.ndarray, y: np.ndarray, z: np.ndarray, theta: float):
 
 
 def _job(func: Callable, xs: np.ndarray, ys: np.ndarray, zs: np.ndarray, theta: float, args, kwargs, path):
-    fig = func(*rotate_z(xs, ys, zs, theta), *args, **kwargs)
+    fig, axes = func(*rotate_z(xs, ys, zs, theta), *args, **kwargs)
+    for axis in axes.flatten():
+        axis.set_xticklabels([])
+        axis.set_yticklabels([])
+        axis.set_zticklabels([])
     fig.savefig(path)
     plt.close(fig)
 
@@ -28,6 +32,19 @@ def _job_wrapper(task: Tuple):
 
 
 def rotate(func: Callable, xs: np.ndarray, ys: np.ndarray, zs: np.ndarray, path: str, fps: int = 24, duration: int = 1, cache_directory: str = ".rotate", verbose: bool = False, *args, **kwargs):
+    """Create rotating gif of given image.
+        func: Callable, function return the figure.
+        xs: np.ndarray, x coordinates.
+        ys: np.ndarray, y coordinates.
+        zs: np.ndarray, z coordinates.
+        path: str, path where to save the GIF.
+        fps: int = 24, number of FPS to create.
+        duration: int = 1, duration of the rotation in seconds.
+        cache_directory: str = ".rotate", directory where to store the frame.
+        verbose: bool = False, whetever to be verbose about frame creation.
+        *args, positional arguments to be passed to the `func` callable.
+        **kwargs, keyword argument to be passed to the `func` callable
+    """
     os.makedirs(cache_directory, exist_ok=True)
     X = MinMaxScaler().fit_transform(np.array([xs, ys, zs]).T).T
     tasks = [

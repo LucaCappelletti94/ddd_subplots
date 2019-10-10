@@ -13,12 +13,8 @@ def my_func(xs: np.ndarray, ys: np.ndarray, zs: np.ndarray, *args, **kwargs):
     axs[0].scatter(xs, ys, zs, **kwargs)
     axs[1].scatter(ys, zs, xs, **kwargs)
     axs[2].scatter(zs, xs, ys, **kwargs)
-    for axis in axes.flatten():
-        axis.set_xticklabels([])
-        axis.set_yticklabels([])
-        axis.set_zticklabels([])
     fig.tight_layout()
-    return fig
+    return fig, axes
 
 
 def test_rotate():
