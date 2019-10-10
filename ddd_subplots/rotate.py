@@ -1,10 +1,10 @@
-from matplotlib.axis import Axis
 import matplotlib.pyplot as plt
 import numpy as np
 from typing import Callable, Tuple
 from tqdm.auto import tqdm
 import os
 from sklearn.preprocessing import MinMaxScaler
+from multiprocessing import Pool, cpu_count
 import imageio
 from pygifsicle import optimize
 import shutil
@@ -32,7 +32,7 @@ def _job_wrapper(task: Tuple):
     _job(*task)
 
 
-def rotate(func: Callable, xs: np.ndarray, ys: np.ndarray, zs: np.ndarray, path: str, fps: int = 24, duration: int = 1, cache_directory: str = ".rotate", verbose: bool = False, *args, **kwargs):
+def rotate(func: Callable, xs: np.ndarray, ys: np.ndarray, zs: np.ndarray, path: str, fps: int = 24, duration: int = 1, cache_directory: str = ".rotate", parallelize: bool = True, verbose: bool = False, *args, **kwargs):
     """Create rotating gif of given image.
         func: Callable, function return the figure.
         xs: np.ndarray, x coordinates.
@@ -42,6 +42,7 @@ def rotate(func: Callable, xs: np.ndarray, ys: np.ndarray, zs: np.ndarray, path:
         fps: int = 24, number of FPS to create.
         duration: int = 1, duration of the rotation in seconds.
         cache_directory: str = ".rotate", directory where to store the frame.
+        parallelize: bool = True, whetever to parallelize execution.
         verbose: bool = False, whetever to be verbose about frame creation.
         *args, positional arguments to be passed to the `func` callable.
         **kwargs, keyword argument to be passed to the `func` callable
@@ -61,8 +62,18 @@ def rotate(func: Callable, xs: np.ndarray, ys: np.ndarray, zs: np.ndarray, path:
         for frame in range(duration*fps)
     ]
 
-    for task in tqdm(tasks, desc="Rendering frames", disable=not verbose):
-        _job_wrapper(task)
+    if parallelize:
+        with Pool(cpu_count()) as p:
+            list(tqdm(
+                p.imap(_job_wrapper, tasks),
+                total=len(tasks),
+                desc="Rendering frames",
+                disable=not verbose))
+            p.close()
+            p.join()
+    else:
+        for task in tqdm(tasks, desc="Rendering frames", disable=not verbose):
+            _job_wrapper(task)
 
     with imageio.get_writer(path, mode='I', fps=fps) as writer:
         for task in tqdm(tasks, disable=not verbose):
