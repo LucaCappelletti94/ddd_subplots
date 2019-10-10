@@ -19,6 +19,6 @@ def test_rotate():
     X_reduced = PCA(n_components=3).fit_transform(X)
     colors = np.array(["red", "green", "blue"])[y]
     rotate(my_func, *X_reduced.T, path="test.gif",
-           duration=3, fps=3, verbose=True, parallelize=False, c=colors, marker='o', s=20)
+           duration=3, fps=10, verbose=True, parallelize=False, c=colors, marker='o', s=20)
     rotate(my_func, *X_reduced.T, path="test.gif",
-           duration=2, fps=24, c=colors, marker='o', s=20)
+           duration=3, fps=10, c=colors, marker='o', s=20)
