@@ -21,4 +21,4 @@ def test_rotate():
     rotate(my_func, *X_reduced.T, path="test.gif",
            duration=3, fps=3, verbose=True, parallelize=False, c=colors, marker='o', s=20)
     rotate(my_func, *X_reduced.T, path="test.gif",
-           duration=2, fps=60, c=colors, marker='o', s=20)
+           duration=2, fps=24, c=colors, marker='o', s=20)
