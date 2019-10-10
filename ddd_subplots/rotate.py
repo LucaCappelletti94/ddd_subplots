@@ -12,7 +12,7 @@ import shutil
 
 def rotate_z(x: np.ndarray, y: np.ndarray, z: np.ndarray, theta: float):
     w = x+1j*y
-    return np.real(np.exp(1j*theta)*w)/np.sqrt(2), np.imag(np.exp(1j*theta)*w)/np.sqrt(2), z
+    return np.real(np.exp(1j*theta)*w)/np.sqrt(2), np.imag(np.exp(1j*theta)*w)/np.sqrt(2), z/np.sqrt(2)
 
 
 def _job(func: Callable, xs: np.ndarray, ys: np.ndarray, zs: np.ndarray, theta: float, args, kwargs, path):
@@ -48,12 +48,10 @@ def rotate(func: Callable, xs: np.ndarray, ys: np.ndarray, zs: np.ndarray, path:
         **kwargs, keyword argument to be passed to the `func` callable
     """
     os.makedirs(cache_directory, exist_ok=True)
-    xs/=xs.max()
-    ys/=ys.max()
-    zs/=zs.max() 
+    X = MinMaxScaler(feature_range=(-1, 1)).fit_transform(np.array([xs, ys, zs]).T).T
     tasks = [
         (
-            func, xs, ys, zs, 2*np.pi * frame / (duration*fps), args, kwargs,
+            func, *X, 2*np.pi * frame / (duration*fps), args, kwargs,
             "{cache_directory}/{frame}.jpg".format(
                 cache_directory=cache_directory,
                 frame=frame
