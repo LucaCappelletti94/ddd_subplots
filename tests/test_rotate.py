@@ -1,10 +1,7 @@
 from ddd_subplots import subplots, rotate
 import numpy as np
-import os
 from sklearn import datasets
-from sklearn.preprocessing import MinMaxScaler
 from sklearn.decomposition import PCA
-from numpy.linalg import norm
 
 
 def my_func(xs: np.ndarray, ys: np.ndarray, zs: np.ndarray, *args, **kwargs):

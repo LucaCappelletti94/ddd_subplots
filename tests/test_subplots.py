@@ -13,9 +13,5 @@ def test_subplots():
     fig, axes = subplots(1, 3, figsize=(15, 5))
     for axis in axes.flatten():
         axis.scatter(*X_reduced.T, depthshade=False, c=colors, marker='o', s=20)
-        axis.set_xticklabels([])
-        axis.set_yticklabels([])
-        axis.set_zticklabels([])
-
     fig.tight_layout()
     fig.savefig("test.png")
