@@ -74,7 +74,7 @@ def rotate(func: Callable, xs: np.ndarray, ys: np.ndarray, zs: np.ndarray, path:
             _job_wrapper(task)
 
     with imageio.get_writer(path, mode='I', fps=fps) as writer:
-        for task in tqdm(tasks, disable=not verbose):
+        for task in tqdm(tasks, desc="Merging frames", disable=not verbose):
             writer.append_data(imageio.imread(task[-1]))
 
     optimize(path)
