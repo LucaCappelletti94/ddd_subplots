@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Dict
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
@@ -6,7 +6,14 @@ from matplotlib.axes import Axes
 from mpl_toolkits.mplot3d import Axes3D
 
 
-def subplots(nrows=1, ncols=1, subplot_kw=None, gridspec_kw=None, **fig_kw) -> Tuple[Figure, Axes]:
+def subplots(
+    nrows: int = 1,
+    ncols: int = 1,
+    subplot_kw: Dict = None,
+    gridspec_kw: Dict = None,
+    squeeze: bool = True,
+    ** fig_kw: Dict
+) -> Tuple[Figure, Axes]:
     """
     Create a figure and a set of subplots.
 
@@ -17,16 +24,13 @@ def subplots(nrows=1, ncols=1, subplot_kw=None, gridspec_kw=None, **fig_kw) -> T
     ----------
     nrows, ncols : int, optional, default: 1
         Number of rows/columns of the subplot grid.
-
     subplot_kw : dict, optional
         Dict with keywords passed to the
         `~matplotlib.figure.Figure.add_subplot` call used to create each
         subplot.
-
     gridspec_kw : dict, optional
         Dict with keywords passed to the `~matplotlib.gridspec.GridSpec`
         constructor used to create the grid the subplots are placed on.
-
     **fig_kw
         All additional keyword arguments are passed to the
         `.pyplot.figure` call.
@@ -43,6 +47,15 @@ def subplots(nrows=1, ncols=1, subplot_kw=None, gridspec_kw=None, **fig_kw) -> T
     """
     fig = plt.figure(**fig_kw)
     axes = np.array([
-        fig.add_subplot(nrows, ncols, 1+i, **({} if subplot_kw is None else subplot_kw), projection='3d') for i in range(nrows*ncols)
+        fig.add_subplot(
+            nrows,
+            ncols,
+            1+i,
+            **({} if subplot_kw is None else subplot_kw),
+            projection='3d'
+        )
+        for i in range(nrows*ncols)
     ]).reshape(nrows, ncols)
+    if squeeze and ncols == 1 and nrows == 1:
+        axes = axes.flatten()[0]
     return fig, axes
