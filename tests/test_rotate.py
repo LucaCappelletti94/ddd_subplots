@@ -6,21 +6,54 @@ from environments_utils import is_macos
 
 
 def my_func(points: np.ndarray, *args, **kwargs):
-    fig, axes = subplots(1, 3, figsize=(9, 3))
-    axs = axes.flatten()
-    axs[0].scatter(points[0], points[1], points[2], **kwargs)
-    axs[1].scatter(points[1], points[2], points[0], **kwargs)
-    axs[2].scatter(points[2], points[0], points[1], **kwargs)
+    fig, axis = subplots(1, 1, figsize=(5, 5), dpi=100)
+    axis.scatter(*points, **kwargs)
+    axis.set_xticklabels([])
+    axis.set_yticklabels([])
+    axis.set_zticklabels([])
+    axis.set_xlim(-1, 1)
+    axis.set_ylim(-1, 1)
+    axis.set_zlim(-1, 1)
     fig.tight_layout()
-    return fig, axes
+    return fig, axis
 
 
 def test_rotate():
     X, y = datasets.load_iris(return_X_y=True)
     X_reduced = PCA(n_components=3).fit_transform(X)
     colors = np.array(["red", "green", "blue"])[y]
-    rotate(my_func, X_reduced.T, path="test.gif",
-           duration=3, fps=10, verbose=True, parallelize=False, c=colors, marker='o', s=20)
+    rotate(
+        my_func,
+        X_reduced.T,
+        path="test.gif",
+        duration=10,
+        fps=30,
+        verbose=True,
+        parallelize=False,
+        c=colors,
+        marker='o',
+        s=10
+    )
+    rotate(
+        my_func,
+        X_reduced.T,
+        path="test.mp4",
+        duration=10,
+        fps=30,
+        verbose=True,
+        parallelize=False,
+        c=colors,
+        marker='o',
+        s=10
+    )
     if not is_macos():
-        rotate(my_func, X_reduced.T, path="test.gif",
-               duration=3, fps=10, c=colors, marker='o', s=20)
+        rotate(
+            my_func,
+            X_reduced.T,
+            path="test.gif",
+            duration=10,
+            fps=30,
+            c=colors,
+            marker='o',
+            s=10
+        )
