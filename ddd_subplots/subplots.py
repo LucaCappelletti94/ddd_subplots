@@ -1,8 +1,9 @@
-from typing import Tuple, Dict
-import numpy as np
+"""Submodule providing 3d subplots handler."""
+from typing import Dict, Tuple
+
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.figure import Figure
-from matplotlib.axes import Axes
 from mpl_toolkits.mplot3d import Axes3D
 
 
@@ -10,10 +11,9 @@ def subplots(
     nrows: int = 1,
     ncols: int = 1,
     subplot_kw: Dict = None,
-    gridspec_kw: Dict = None,
     squeeze: bool = True,
     ** fig_kw: Dict
-) -> Tuple[Figure, Axes]:
+) -> Tuple[Figure, Axes3D]:
     """
     Create a figure and a set of subplots.
 
@@ -28,9 +28,6 @@ def subplots(
         Dict with keywords passed to the
         `~matplotlib.figure.Figure.add_subplot` call used to create each
         subplot.
-    gridspec_kw : dict, optional
-        Dict with keywords passed to the `~matplotlib.gridspec.GridSpec`
-        constructor used to create the grid the subplots are placed on.
     **fig_kw
         All additional keyword arguments are passed to the
         `.pyplot.figure` call.

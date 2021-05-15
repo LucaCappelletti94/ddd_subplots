@@ -1,15 +1,15 @@
 """Package to produce rotating 3d plots."""
+import os
+import shutil
+from multiprocessing import Pool, cpu_count
+from typing import Callable, Dict, List, Tuple
+
+import imageio
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import Callable, Tuple, Union
-from tqdm.auto import tqdm
-import os
-from sklearn.preprocessing import MinMaxScaler
-from multiprocessing import Pool, cpu_count
-from environments_utils import is_macos
-import imageio
 from pygifsicle import optimize
-import shutil
+from sklearn.preprocessing import MinMaxScaler
+from tqdm.auto import tqdm
 
 conversion_command = """ffmpeg -framerate {fps}  -i "{path}/%d.jpg" -crf 20 -tune animation -preset veryslow -pix_fmt yuv444p10le {output_path} -y"""
 
@@ -66,7 +66,31 @@ def rotating_spiral(x: np.ndarray, y: np.ndarray, z: np.ndarray, theta: float) -
     return np.vstack([x, y, z])
 
 
-def _job(func: Callable, points: np.ndarray, theta: float, args, kwargs, path):
+def _render_frame(
+    func: Callable,
+    points: np.ndarray,
+    theta: float,
+    args: List,
+    kwargs: Dict,
+    path: str
+):
+    """Method for rendering frame.
+
+    Parameters
+    -----------------------
+    func: Callable,
+        Function to call to renderize the frame.
+    points: np.ndarray,
+        The points to be rotated and renderized.
+    theta: float,
+        The amount of rotation.
+    args: List,
+        The list of positional arguments.
+    kwargs: Dict,
+        The dictionary of keywargs arguments.
+    path: str,
+        The path where to save the frame.
+    """
     fig, _ = func(
         rotating_spiral(
             points[0],
@@ -81,8 +105,9 @@ def _job(func: Callable, points: np.ndarray, theta: float, args, kwargs, path):
     plt.close(fig)
 
 
-def _job_wrapper(task: Tuple):
-    _job(*task)
+def _render_frame_wrapper(task: Tuple):
+    """Wrapper method for rendering frame."""
+    _render_frame(*task)
 
 
 def rotate(
@@ -154,7 +179,7 @@ def rotate(
     if parallelize:
         with Pool(cpu_count()) as p:
             list(tqdm(
-                p.imap(_job_wrapper, tasks),
+                p.imap(_render_frame_wrapper, tasks),
                 total=len(tasks),
                 desc="Rendering frames",
                 disable=not verbose
@@ -163,7 +188,7 @@ def rotate(
             p.join()
     else:
         for task in tqdm(tasks, desc="Rendering frames", disable=not verbose):
-            _job_wrapper(task)
+            _render_frame_wrapper(task)
 
     if is_gif:
         with imageio.get_writer(path, mode='I', fps=fps) as writer:
