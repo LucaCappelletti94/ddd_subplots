@@ -11,9 +11,10 @@ def my_func(points: np.ndarray, *args, **kwargs):
     axis.set_xticklabels([])
     axis.set_yticklabels([])
     axis.set_zticklabels([])
-    axis.set_xlim(-1, 1)
-    axis.set_ylim(-1, 1)
-    axis.set_zlim(-1, 1)
+    axis.set_xlim(-0.3, 0.3)
+    axis.set_ylim(-0.3, 0.3)
+    axis.set_zlim(-0.3, 0.3)
+    axis.set_axis_off()
     fig.tight_layout()
     return fig, axis
 
