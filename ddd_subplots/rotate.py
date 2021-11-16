@@ -208,6 +208,7 @@ def rotate(
             )
             for executed_tasks_number in p.imap(_render_frame_wrapper, chunks(tasks, chunks_size)):
                 loading_bar.update(executed_tasks_number)
+            loading_bar.close()
             p.close()
             p.join()
     else:
