@@ -206,8 +206,8 @@ def rotate(
         )
 
     # We blindly consume the iterator.
-        for _ in tasks_iterator:
-            pass
+    for _ in tasks_iterator:
+        pass
 
     if is_gif:
         imageio.mimsave(
