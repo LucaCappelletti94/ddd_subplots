@@ -204,6 +204,7 @@ def rotate(
                 total=total_frames,
                 desc="Rendering frames",
                 disable=not verbose,
+                dynamic_ncols=True,
                 leave=False
             )
             for executed_tasks_number in p.imap(_render_frame_wrapper, chunks(tasks, chunks_size)):
@@ -212,12 +213,12 @@ def rotate(
             p.close()
             p.join()
     else:
-        for task in tqdm(tasks, desc="Rendering frames", disable=not verbose, leave=False):
+        for task in tqdm(tasks, desc="Rendering frames", disable=not verbose, dynamic_ncols=True, leave=False):
             _render_frame_wrapper([task])
 
     if is_gif:
         with imageio.get_writer(path, mode='I', fps=fps) as writer:
-            for task in tqdm(tasks, desc="Merging frames", disable=not verbose, leave=False):
+            for task in tqdm(tasks, desc="Merging frames", disable=not verbose, dynamic_ncols=True, leave=False):
                 writer.append_data(imageio.imread(task[-1]))
         optimize(path)
     else:
