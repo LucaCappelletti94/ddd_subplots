@@ -73,7 +73,7 @@ def _render_frame(
     args: List,
     kwargs: Dict,
     path: str
-) -> Optional[np.ndarray]:
+):
     """Method for rendering frame.
 
     Parameters
@@ -107,25 +107,13 @@ def _render_frame(
     axis.set_ylim(-0.25, 0.25)
     axis.set_zlim(-0.25, 0.25)
     fig.tight_layout()
-
-    if path is None:
-        # Now we can save it to a numpy array.
-        resulting_image = np.fromstring(
-            fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
-        resulting_image = resulting_image.reshape(
-            fig.canvas.get_width_height()[::-1] + (3,))
-    else:
-        # Or else we save it to file
-        fig.savefig(path)
-        resulting_image = None
-
+    fig.savefig(path)
     plt.close(fig)
-    return resulting_image
 
 
-def _render_frame_wrapper(task: Tuple) -> Optional[np.ndarray]:
+def _render_frame_wrapper(task: Tuple):
     """Wrapper method for rendering frame."""
-    return _render_frame(*task)
+    _render_frame(*task)
 
 
 def rotate(
@@ -190,17 +178,15 @@ def rotate(
 
     total_frames = duration*fps
 
+    frames_path = "{cache_directory}/{{frame}}.jpg".format(
+        cache_directory=cache_directory
+    )
+
     # Create the iterator over the tasks.
     tasks_iterator = (
         (
             func, X, 2 * np.pi * frame / total_frames, args, kwargs,
-            (
-                None if is_gif else
-                "{cache_directory}/{frame}.jpg".format(
-                    cache_directory=cache_directory,
-                    frame=frame
-                )
-            )
+            frames_path.format(frame=frame)
         )
         for frame in trange(
             total_frames,
@@ -220,13 +206,18 @@ def rotate(
         )
 
     if is_gif:
-        # Otherwise we return the images.
-        # with imageio.get_writer(path, mode='I', fps=fps) as writer:
-        #     for image in tasks_iterator:
-        #         writer.append_data(image)
         imageio.mimsave(
             path,
-            list(tasks_iterator),
+            [
+                imageio.imread(frames_path.format(frame=frame))
+                for frame in trange(
+                    total_frames,
+                    desc="Load frames for GIF",
+                    disable=not verbose,
+                    leave=False,
+                    dynamic_ncols=True
+                )
+            ],
             fps=fps
         )
         optimize(path)
@@ -239,7 +230,9 @@ def rotate(
             output_path=path,
             path=cache_directory
         ))
-        shutil.rmtree(cache_directory)
+
+    # Remove the directory of the frames
+    shutil.rmtree(cache_directory)
 
     # If we have started the pool we need to close it down.
     if parallelize:
