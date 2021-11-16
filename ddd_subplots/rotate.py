@@ -221,9 +221,14 @@ def rotate(
 
     if is_gif:
         # Otherwise we return the images.
-        with imageio.get_writer(path, mode='I', fps=fps) as writer:
-            for image in tasks_iterator:
-                writer.append_data(image)
+        # with imageio.get_writer(path, mode='I', fps=fps) as writer:
+        #     for image in tasks_iterator:
+        #         writer.append_data(image)
+        imageio.mimsave(
+            path,
+            list(tasks_iterator),
+            fps=fps
+        )
         optimize(path)
     else:
         # We blindly consume the iterator.
