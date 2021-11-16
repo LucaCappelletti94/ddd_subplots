@@ -2,14 +2,14 @@
 import os
 import shutil
 from multiprocessing import Pool, cpu_count
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Tuple
 
 import imageio
 import matplotlib.pyplot as plt
 import numpy as np
 from pygifsicle import optimize
 from sklearn.preprocessing import MinMaxScaler
-from tqdm.auto import tqdm, trange
+from tqdm.auto import tqdm
 
 conversion_command = """ffmpeg -framerate {fps}  -i "{path}/%d.jpg" -crf 20 -tune animation -preset veryslow -pix_fmt yuv444p10le {output_path} -y"""
 
@@ -103,10 +103,9 @@ def _render_frame(
     axis.set_xticklabels([])
     axis.set_yticklabels([])
     axis.set_zticklabels([])
-    axis.set_xlim(-0.25, 0.25)
-    axis.set_ylim(-0.25, 0.25)
-    axis.set_zlim(-0.25, 0.25)
-    fig.tight_layout()
+    axis.set_xlim(-0.3, 0.3)
+    axis.set_ylim(-0.3, 0.3)
+    axis.set_zlim(-0.3, 0.3)
     fig.savefig(path)
     plt.close(fig)
 
@@ -178,52 +177,35 @@ def rotate(
 
     total_frames = duration*fps
 
-    frames_path = "{cache_directory}/{{frame}}.jpg".format(
-        cache_directory=cache_directory
-    )
-
-    # Create the iterator over the tasks.
-    tasks_iterator = (
+    tasks = [
         (
             func, X, 2 * np.pi * frame / total_frames, args, kwargs,
-            frames_path.format(frame=frame)
+            "{cache_directory}/{frame}.jpg".format(
+                cache_directory=cache_directory,
+                frame=frame
+            )
         )
-        for frame in trange(
-            total_frames,
-            desc="Rendering frames",
-            disable=not verbose,
-            leave=False,
-            dynamic_ncols=True
-        )
-    )
-    if parallelize:
-        pool = Pool(cpu_count())
-        tasks_iterator = pool.imap(_render_frame_wrapper, tasks_iterator)
-    else:
-        tasks_iterator = (
-            _render_frame_wrapper(task)
-            for task in tasks_iterator
-        )
+        for frame in range(total_frames)
+    ]
 
-    # We blindly consume the iterator.
-    for _ in tasks_iterator:
-        pass
+    if parallelize:
+        with Pool(cpu_count()) as p:
+            list(tqdm(
+                p.imap(_render_frame_wrapper, tasks),
+                total=len(tasks),
+                desc="Rendering frames",
+                disable=not verbose
+            ))
+            p.close()
+            p.join()
+    else:
+        for task in tqdm(tasks, desc="Rendering frames", disable=not verbose):
+            _render_frame_wrapper(task)
 
     if is_gif:
-        imageio.mimsave(
-            path,
-            [
-                imageio.imread(frames_path.format(frame=frame))
-                for frame in trange(
-                    total_frames,
-                    desc="Load frames for GIF",
-                    disable=not verbose,
-                    leave=False,
-                    dynamic_ncols=True
-                )
-            ],
-            fps=fps
-        )
+        with imageio.get_writer(path, mode='I', fps=fps) as writer:
+            for task in tqdm(tasks, desc="Merging frames", disable=not verbose):
+                writer.append_data(imageio.imread(task[-1]))
         optimize(path)
     else:
         os.system(conversion_command.format(
@@ -231,11 +213,4 @@ def rotate(
             output_path=path,
             path=cache_directory
         ))
-
-    # Remove the directory of the frames
     shutil.rmtree(cache_directory)
-
-    # If we have started the pool we need to close it down.
-    if parallelize:
-        pool.close()
-        pool.join()
