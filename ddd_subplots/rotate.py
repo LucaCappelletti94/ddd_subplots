@@ -14,6 +14,12 @@ from tqdm.auto import tqdm
 conversion_command = """ffmpeg -framerate {fps}  -i "{path}/%d.jpg" -crf 20 -tune animation -preset veryslow -pix_fmt yuv444p10le {output_path} -y"""
 
 
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+
 def rotate_along_z_axis(x: np.ndarray, y: np.ndarray, z: np.ndarray, theta: float) -> Tuple[np.ndarray]:
     """Return points rotate along z-axis.
 
@@ -110,9 +116,10 @@ def _render_frame(
     plt.close(fig)
 
 
-def _render_frame_wrapper(task: Tuple):
+def _render_frame_wrapper(tasks: List[Tuple]):
     """Wrapper method for rendering frame."""
-    _render_frame(*task)
+    for task in tasks:
+        _render_frame(*task)
 
 
 def rotate(
@@ -189,18 +196,20 @@ def rotate(
     ]
 
     if parallelize:
-        with Pool(cpu_count()) as p:
-            list(tqdm(
-                p.imap(_render_frame_wrapper, tasks),
-                total=len(tasks),
+        number_of_processes = cpu_count()
+        with Pool(number_of_processes) as p:
+            chunks_size = total_frames // number_of_processes
+            for _ in p.imap(_render_frame_wrapper, chunks(tqdm(
+                tasks,
                 desc="Rendering frames",
                 disable=not verbose
-            ))
+            )), chunks_size):
+                pass
             p.close()
             p.join()
     else:
         for task in tqdm(tasks, desc="Rendering frames", disable=not verbose):
-            _render_frame_wrapper(task)
+            _render_frame_wrapper([task])
 
     if is_gif:
         with imageio.get_writer(path, mode='I', fps=fps) as writer:
