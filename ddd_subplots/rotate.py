@@ -205,6 +205,10 @@ def rotate(
             for task in tasks_iterator
         )
 
+    # We blindly consume the iterator.
+        for _ in tasks_iterator:
+            pass
+
     if is_gif:
         imageio.mimsave(
             path,
@@ -222,9 +226,6 @@ def rotate(
         )
         optimize(path)
     else:
-        # We blindly consume the iterator.
-        for _ in tasks_iterator:
-            pass
         os.system(conversion_command.format(
             fps=fps,
             output_path=path,
