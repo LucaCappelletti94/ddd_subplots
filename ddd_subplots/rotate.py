@@ -103,9 +103,9 @@ def _render_frame(
     axis.set_xticklabels([])
     axis.set_yticklabels([])
     axis.set_zticklabels([])
-    axis.set_xlim(-0.3, 0.3)
-    axis.set_ylim(-0.3, 0.3)
-    axis.set_zlim(-0.3, 0.3)
+    axis.set_xlim(-0.25, 0.25)
+    axis.set_ylim(-0.25, 0.25)
+    axis.set_zlim(-0.25, 0.25)
     fig.savefig(path)
     plt.close(fig)
 
