@@ -91,7 +91,7 @@ def _render_frame(
     path: str,
         The path where to save the frame.
     """
-    fig, _ = func(
+    fig, axis = func(
         rotating_spiral(
             *points.T,
             theta
@@ -99,6 +99,13 @@ def _render_frame(
         *args,
         **kwargs
     )
+    axis.set_axis_off()
+    axis.set_xticklabels([])
+    axis.set_yticklabels([])
+    axis.set_zticklabels([])
+    axis.set_xlim(-0.3, 0.3)
+    axis.set_ylim(-0.3, 0.3)
+    axis.set_zlim(-0.3, 0.3)
     fig.savefig(path)
     plt.close(fig)
 

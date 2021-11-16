@@ -8,13 +8,6 @@ from environments_utils import is_macos
 def my_func(points: np.ndarray, *args, **kwargs):
     fig, axis = subplots(1, 1, figsize=(5, 5), dpi=100)
     axis.scatter(*points, **kwargs)
-    axis.set_xticklabels([])
-    axis.set_yticklabels([])
-    axis.set_zticklabels([])
-    axis.set_xlim(-0.3, 0.3)
-    axis.set_ylim(-0.3, 0.3)
-    axis.set_zlim(-0.3, 0.3)
-    axis.set_axis_off()
     fig.tight_layout()
     return fig, axis
 
