@@ -2,14 +2,14 @@
 import os
 import shutil
 from multiprocessing import Pool, cpu_count
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import imageio
 import matplotlib.pyplot as plt
 import numpy as np
 from pygifsicle import optimize
 from sklearn.preprocessing import MinMaxScaler
-from tqdm.auto import tqdm
+from tqdm.auto import tqdm, trange
 
 conversion_command = """ffmpeg -framerate {fps}  -i "{path}/%d.jpg" -crf 20 -tune animation -preset veryslow -pix_fmt yuv444p10le {output_path} -y"""
 
@@ -73,7 +73,7 @@ def _render_frame(
     args: List,
     kwargs: Dict,
     path: str
-):
+) -> Optional[np.ndarray]:
     """Method for rendering frame.
 
     Parameters
@@ -103,16 +103,29 @@ def _render_frame(
     axis.set_xticklabels([])
     axis.set_yticklabels([])
     axis.set_zticklabels([])
-    axis.set_xlim(-0.3, 0.3)
-    axis.set_ylim(-0.3, 0.3)
-    axis.set_zlim(-0.3, 0.3)
-    fig.savefig(path)
+    axis.set_xlim(-0.25, 0.25)
+    axis.set_ylim(-0.25, 0.25)
+    axis.set_zlim(-0.25, 0.25)
+    fig.tight_layout()
+
+    if path is None:
+        # Now we can save it to a numpy array.
+        resulting_image = np.fromstring(
+            fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
+        resulting_image = resulting_image.reshape(
+            fig.canvas.get_width_height()[::-1] + (3,))
+    else:
+        # Or else we save it to file
+        fig.savefig(path)
+        resulting_image = None
+
     plt.close(fig)
+    return resulting_image
 
 
-def _render_frame_wrapper(task: Tuple):
+def _render_frame_wrapper(task: Tuple) -> Optional[np.ndarray]:
     """Wrapper method for rendering frame."""
-    _render_frame(*task)
+    return _render_frame(*task)
 
 
 def rotate(
@@ -177,41 +190,53 @@ def rotate(
 
     total_frames = duration*fps
 
-    tasks = [
+    # Create the iterator over the tasks.
+    tasks_iterator = (
         (
             func, X, 2 * np.pi * frame / total_frames, args, kwargs,
-            "{cache_directory}/{frame}.jpg".format(
-                cache_directory=cache_directory,
-                frame=frame
+            (
+                None if is_gif else
+                "{cache_directory}/{frame}.jpg".format(
+                    cache_directory=cache_directory,
+                    frame=frame
+                )
             )
         )
-        for frame in range(total_frames)
-    ]
-
+        for frame in trange(
+            total_frames,
+            desc="Rendering frames",
+            disable=not verbose,
+            leave=False,
+            dynamic_ncols=True
+        )
+    )
     if parallelize:
-        with Pool(cpu_count()) as p:
-            list(tqdm(
-                p.imap(_render_frame_wrapper, tasks),
-                total=len(tasks),
-                desc="Rendering frames",
-                disable=not verbose
-            ))
-            p.close()
-            p.join()
+        pool = Pool(cpu_count())
+        tasks_iterator = pool.imap(_render_frame_wrapper, tasks_iterator)
     else:
-        for task in tqdm(tasks, desc="Rendering frames", disable=not verbose):
+        tasks_iterator = (
             _render_frame_wrapper(task)
+            for task in tasks_iterator
+        )
 
     if is_gif:
+        # Otherwise we return the images.
         with imageio.get_writer(path, mode='I', fps=fps) as writer:
-            for task in tqdm(tasks, desc="Merging frames", disable=not verbose):
-                writer.append_data(imageio.imread(task[-1]))
-
+            for image in tasks_iterator:
+                writer.append_data(image)
         optimize(path)
     else:
+        # We blindly consume the iterator.
+        for _ in tasks_iterator:
+            pass
         os.system(conversion_command.format(
             fps=fps,
             output_path=path,
             path=cache_directory
         ))
-    shutil.rmtree(cache_directory)
+        shutil.rmtree(cache_directory)
+
+    # If we have started the pool we need to close it down.
+    if parallelize:
+        pool.close()
+        pool.join()
