@@ -146,6 +146,13 @@ def rotate(
         keyword argument to be passed to the `func` callable
 
     """
+    if points.shape[1] != 3:
+        raise ValueError(
+            (
+                "In order to draw a 3D rotating plot, you need to provide "
+                "a 3D matrix. The one you have provided has shape `{}`."
+            ).format(points.shape)
+        )
     global conversion_command
 
     is_gif = path.endswith(".gif")
@@ -159,7 +166,7 @@ def rotate(
     os.makedirs(cache_directory, exist_ok=True)
     X = MinMaxScaler(
         feature_range=(-1, 1)
-    ).fit_transform(points.T).T
+    ).fit_transform(points)
 
     total_frames = duration*fps
 
