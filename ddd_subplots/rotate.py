@@ -203,7 +203,7 @@ def rotate(
                 tasks,
                 desc="Rendering frames",
                 disable=not verbose
-            )), chunks_size):
+            ), chunks_size)):
                 pass
             p.close()
             p.join()
