@@ -93,11 +93,9 @@ def _render_frame(
     """
     fig, _ = func(
         rotating_spiral(
-            points[0],
-            points[1],
-            points[2],
+            *points.T,
             theta
-        ),
+        ).T,
         *args,
         **kwargs
     )
