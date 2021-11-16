@@ -116,10 +116,11 @@ def _render_frame(
     plt.close(fig)
 
 
-def _render_frame_wrapper(tasks: List[Tuple]):
+def _render_frame_wrapper(tasks: List[Tuple]) -> int:
     """Wrapper method for rendering frame."""
     for task in tasks:
         _render_frame(*task)
+    return len(tasks)
 
 
 def rotate(
@@ -199,12 +200,13 @@ def rotate(
         number_of_processes = cpu_count()
         with Pool(number_of_processes) as p:
             chunks_size = total_frames // number_of_processes
-            for _ in p.imap(_render_frame_wrapper, chunks(tqdm(
-                tasks,
+            loading_bar = tqdm(
+                total=total_frames,
                 desc="Rendering frames",
                 disable=not verbose
-            ), chunks_size)):
-                pass
+            )
+            for executed_tasks_number in p.imap(_render_frame_wrapper, chunks(tasks, chunks_size)):
+                loading_bar.update(executed_tasks_number)
             p.close()
             p.join()
     else:
