@@ -113,10 +113,13 @@ def _render_frame(
     axis.set_axis_off()
     axis.set_xticklabels([])
     axis.set_yticklabels([])
-    axis.set_zticklabels([])
     axis.set_xlim(-0.2, 0.2)
     axis.set_ylim(-0.2, 0.2)
-    axis.set_zlim(-0.2, 0.2)
+    try:
+        axis.set_zlim(-0.2, 0.2)
+        axis.set_zticklabels([])
+    except AttributeError:
+        pass
     fig.savefig(path)
     plt.close(fig)
 
