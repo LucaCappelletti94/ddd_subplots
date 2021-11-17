@@ -79,7 +79,7 @@ def sliding_space(
     kwargs: Dict[str, Any],
     threshold: float,
     auto_slice: bool,
-    epsilon: float = 0.05
+    epsilon: float = 0.1
 ) -> np.ndarray:
     """Return given points sliced in the fourth dimension into the bucket of given size.
 
@@ -97,7 +97,7 @@ def sliding_space(
         Whether to automatically slice all other numpy vector
         objects provided alongside the points if they have the same
         number of samples.
-    epsilon: float = 0.05
+    epsilon: float = 0.1
         Size of the window to take into consideration
     """
     assert points.shape[1] == 4
