@@ -2,11 +2,12 @@
 import os
 import shutil
 from multiprocessing import Pool, cpu_count
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, Dict, List, Tuple, Any
 
 import imageio
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.lib.arraysetops import isin
 from pygifsicle import optimize
 from sklearn.preprocessing import MinMaxScaler
 from tqdm.auto import tqdm
@@ -74,7 +75,10 @@ def rotating_spiral(x: np.ndarray, y: np.ndarray, z: np.ndarray, theta: float) -
 
 def sliding_space(
     points: np.ndarray,
+    args: List[Any],
+    kwargs: Dict[str, Any],
     threshold: float,
+    auto_slice: bool,
     epsilon: float = 0.05
 ) -> np.ndarray:
     """Return given points sliced in the fourth dimension into the bucket of given size.
@@ -83,8 +87,16 @@ def sliding_space(
     ------------------------
     points: np.ndarray
         The points to be sliced.
+    args: List,
+        The list of positional arguments.
+    kwargs: Dict,
+        The dictionary of keywargs arguments.
     threshold: float
         The current threshold position to be used.
+    auto_slice: bool = True,
+        Whether to automatically slice all other numpy vector
+        objects provided alongside the points if they have the same
+        number of samples.
     epsilon: float = 0.05
         Size of the window to take into consideration
     """
@@ -102,8 +114,22 @@ def sliding_space(
     # Analogously if we are on the higher side
     if threshold + epsilon > 1:
         mask |= points[:, 3] <= (threshold + epsilon) - 2
+    if auto_slice:
+        args = [
+            arg[mask]
+            if isinstance(arg, np.ndarray) and arg.shape[0] == points.shape[0]
+            else arg
+            for arg in args
+        ]
+        kwargs = {
+            kw: arg[mask]
+            if isinstance(arg, np.ndarray) and arg.shape[0] == points.shape[0]
+            else arg
+            for kw, arg in kwargs.items()
+        }
+
     # The we apply the mask and slice the points
-    return points[mask][:, :3]
+    return points[mask][:, :3], args, kwargs
 
 
 def _render_frame(
@@ -111,6 +137,7 @@ def _render_frame(
     points: np.ndarray,
     threshold: float,
     theta: float,
+    auto_slice: bool,
     args: List,
     kwargs: Dict,
     path: str
@@ -127,6 +154,10 @@ def _render_frame(
         The current threshold position to be used.
     theta: float,
         The amount of rotation.
+    auto_slice: bool = True
+        Whether to automatically slice all other numpy vector
+        objects provided alongside the points if they have the same
+        number of samples.
     args: List,
         The list of positional arguments.
     kwargs: Dict,
@@ -135,9 +166,12 @@ def _render_frame(
         The path where to save the frame.
     """
     if points.shape[1] == 4:
-        points = sliding_space(
+        points, args, kwargs = sliding_space(
             points,
-            threshold=threshold
+            args,
+            kwargs,
+            threshold=threshold,
+            auto_slice=auto_slice
         )
     fig, axis = func(
         rotating_spiral(
@@ -174,6 +208,7 @@ def rotate(
     duration: int = 1,
     cache_directory: str = ".rotate",
     parallelize: bool = True,
+    auto_slice: bool = True,
     verbose: bool = False,
     **kwargs
 ):
@@ -197,6 +232,10 @@ def rotate(
         directory where to store the frame.
     parallelize: bool = True
         whetever to parallelize execution.
+    auto_slice: bool = True,
+        Whether to automatically slice all other numpy vector
+        objects provided alongside the points if they have the same
+        number of samples.
     verbose: bool = False
         whetever to be verbose about frame creation.
     **kwargs
@@ -233,6 +272,7 @@ def rotate(
             X,
             2*frame / total_frames - 1,
             2 * np.pi * frame / total_frames,
+            auto_slice,
             args,
             kwargs,
             "{cache_directory}/{frame}.jpg".format(
