@@ -21,7 +21,7 @@ def chunks(lst, n):
         yield lst[i:i + n]
 
 
-def rotate_along_z_axis(x: np.ndarray, y: np.ndarray, z: np.ndarray, theta: float) -> Tuple[np.ndarray]:
+def rotate_along_last_axis(x: np.ndarray, y: np.ndarray, *features: List[np.ndarray], theta: float) -> List[np.ndarray]:
     """Return points rotate along z-axis.
 
     Parameters
@@ -30,9 +30,8 @@ def rotate_along_z_axis(x: np.ndarray, y: np.ndarray, z: np.ndarray, theta: floa
         First axis of the points vector.
     y: np.ndarray,
         Second axis of the points vector.
-    z: np.ndarray,
-        Third axis of the points vector.
-        This is the axis that will be the rotation axis.
+    features: List[np.ndarray],
+        Extra features to be rotated.
     theta: float,
         Theta for the current variation.
 
@@ -41,25 +40,23 @@ def rotate_along_z_axis(x: np.ndarray, y: np.ndarray, z: np.ndarray, theta: floa
     Tuple with rotated values.
     """
     w = x+1j*y
-    return (
+    return [
         np.real(np.exp(1j*theta)*w)/np.sqrt(2),
         np.imag(np.exp(1j*theta)*w)/np.sqrt(2),
-        z/np.sqrt(2)
-    )
+        *[
+            feature/np.sqrt(2)
+            for feature in features
+        ]
+    ]
 
 
-def rotating_spiral(x: np.ndarray, y: np.ndarray, z: np.ndarray, theta: float) -> np.ndarray:
+def rotating_spiral(*features: List[np.ndarray], theta: float) -> np.ndarray:
     """Return rotated points following a spiral path.
 
     Parameters
     ---------------------
-    x: np.ndarray,
-        First axis of the points vector.
-    y: np.ndarray,
-        Second axis of the points vector.
-    z: np.ndarray,
-        Third axis of the points vector.
-        This is the axis that will be the rotation axis.
+    features: List[np.ndarray],
+        Extra features to be rotated.
     theta: float,
         Theta for the current variation.
 
@@ -67,77 +64,17 @@ def rotating_spiral(x: np.ndarray, y: np.ndarray, z: np.ndarray, theta: float) -
     ----------------------
     Numpy array with rotated values.
     """
-    x, y, z = rotate_along_z_axis(x, y, z, theta)
-    x, z, y = rotate_along_z_axis(x, z, y, theta*2)
-    z, y, x = rotate_along_z_axis(z, y, x, theta*4)
-    return np.vstack([x, y, z])
-
-
-def sliding_space(
-    points: np.ndarray,
-    args: List[Any],
-    kwargs: Dict[str, Any],
-    threshold: float,
-    auto_slice: bool,
-    epsilon: float = 0.1
-) -> np.ndarray:
-    """Return given points sliced in the fourth dimension into the bucket of given size.
-
-    Parameters
-    ------------------------
-    points: np.ndarray
-        The points to be sliced.
-    args: List,
-        The list of positional arguments.
-    kwargs: Dict,
-        The dictionary of keywargs arguments.
-    threshold: float
-        The current threshold position to be used.
-    auto_slice: bool = True,
-        Whether to automatically slice all other numpy vector
-        objects provided alongside the points if they have the same
-        number of samples.
-    epsilon: float = 0.1
-        Size of the window to take into consideration
-    """
-    assert points.shape[1] == 4
-    mask = (
-        points[:, 3] >= threshold - epsilon
-    ) & (
-        points[:, 3] <= threshold + epsilon
-    )
-    # If this is the threshold on the lower side
-    # we want to include the points on the other side
-    # so to create a looper-around dimension.
-    if threshold - epsilon < -1:
-        mask |= points[:, 3] >= 2 - (threshold - epsilon)
-    # Analogously if we are on the higher side
-    if threshold + epsilon > 1:
-        mask |= points[:, 3] <= (threshold + epsilon) - 2
-    if auto_slice:
-        args = [
-            arg[mask]
-            if isinstance(arg, np.ndarray) and arg.shape[0] == points.shape[0]
-            else arg
-            for arg in args
-        ]
-        kwargs = {
-            kw: arg[mask]
-            if isinstance(arg, np.ndarray) and arg.shape[0] == points.shape[0]
-            else arg
-            for kw, arg in kwargs.items()
-        }
-
-    # The we apply the mask and slice the points
-    return points[mask][:, :3], args, kwargs
+    for _ in range(len(features)):
+        new_features = rotate_along_last_axis(*features, theta)
+        features[-1] = new_features[0]
+        features[:-1] = new_features[1:]
+    return np.vstack(features)
 
 
 def _render_frame(
     func: Callable,
     points: np.ndarray,
-    threshold: float,
     theta: float,
-    auto_slice: bool,
     args: List,
     kwargs: Dict,
     path: str
@@ -150,14 +87,8 @@ def _render_frame(
         Function to call to renderize the frame.
     points: np.ndarray,
         The points to be rotated and renderized.
-    threshold: float
-        The current threshold position to be used.
     theta: float,
         The amount of rotation.
-    auto_slice: bool = True
-        Whether to automatically slice all other numpy vector
-        objects provided alongside the points if they have the same
-        number of samples.
     args: List,
         The list of positional arguments.
     kwargs: Dict,
@@ -165,19 +96,16 @@ def _render_frame(
     path: str,
         The path where to save the frame.
     """
-    if points.shape[1] == 4:
-        points, args, kwargs = sliding_space(
-            points,
-            args,
-            kwargs,
-            threshold=threshold,
-            auto_slice=auto_slice
-        )
+    points = rotating_spiral(
+        *points.T,
+        theta
+    ).T
+
+    if points.shape[1] > 3:
+        points = points[:, :3]
+
     fig, axis = func(
-        rotating_spiral(
-            *points.T,
-            theta
-        ).T,
+        points,
         *args,
         **kwargs
     )
@@ -185,9 +113,9 @@ def _render_frame(
     axis.set_xticklabels([])
     axis.set_yticklabels([])
     axis.set_zticklabels([])
-    axis.set_xlim(-0.25, 0.25)
-    axis.set_ylim(-0.25, 0.25)
-    axis.set_zlim(-0.25, 0.25)
+    axis.set_xlim(-0.2, 0.2)
+    axis.set_ylim(-0.2, 0.2)
+    axis.set_zlim(-0.2, 0.2)
     fig.savefig(path)
     plt.close(fig)
 
@@ -208,7 +136,6 @@ def rotate(
     duration: int = 1,
     cache_directory: str = ".rotate",
     parallelize: bool = True,
-    auto_slice: bool = True,
     verbose: bool = False,
     **kwargs
 ):
@@ -232,23 +159,12 @@ def rotate(
         directory where to store the frame.
     parallelize: bool = True
         whetever to parallelize execution.
-    auto_slice: bool = True,
-        Whether to automatically slice all other numpy vector
-        objects provided alongside the points if they have the same
-        number of samples.
     verbose: bool = False
         whetever to be verbose about frame creation.
     **kwargs
         keyword argument to be passed to the `func` callable
 
     """
-    if points.shape[1] not in (3, 4):
-        raise ValueError(
-            (
-                "In order to draw a 3D rotating plot, you need to provide "
-                "a 3D or 4D matrix. The one you have provided has shape `{}`."
-            ).format(points.shape)
-        )
     global conversion_command
 
     is_gif = path.endswith(".gif")
@@ -270,9 +186,7 @@ def rotate(
         (
             func,
             X,
-            2*frame / total_frames - 1,
             2 * np.pi * frame / total_frames,
-            auto_slice,
             args,
             kwargs,
             "{cache_directory}/{frame}.jpg".format(
