@@ -98,7 +98,7 @@ def _render_frame(
     """
     points = rotating_spiral(
         *points.T,
-        theta
+        theta=theta
     ).T
 
     if points.shape[1] > 3:
