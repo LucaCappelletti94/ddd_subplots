@@ -72,9 +72,44 @@ def rotating_spiral(x: np.ndarray, y: np.ndarray, z: np.ndarray, theta: float) -
     return np.vstack([x, y, z])
 
 
+def sliding_space(
+    points: np.ndarray,
+    threshold: float,
+    epsilon: float = 0.05
+) -> np.ndarray:
+    """Return given points sliced in the fourth dimension into the bucket of given size.
+
+    Parameters
+    ------------------------
+    points: np.ndarray
+        The points to be sliced.
+    threshold: float
+        The current threshold position to be used.
+    epsilon: float = 0.05
+        Size of the window to take into consideration
+    """
+    assert points.shape[1] == 4
+    mask = (
+        points[:, 3] >= threshold - epsilon
+    ) & (
+        points[:, 3] <= threshold + epsilon
+    )
+    # If this is the threshold on the lower side
+    # we want to include the points on the other side
+    # so to create a looper-around dimension.
+    if threshold - epsilon < -1:
+        mask |= points[:, 3] >= 2 - (threshold - epsilon)
+    # Analogously if we are on the higher side
+    if threshold + epsilon > 1:
+        mask |= points[:, 3] <= (threshold + epsilon) - 2
+    # The we apply the mask and slice the points
+    return points[mask][:, :3]
+
+
 def _render_frame(
     func: Callable,
     points: np.ndarray,
+    threshold: float,
     theta: float,
     args: List,
     kwargs: Dict,
@@ -88,6 +123,8 @@ def _render_frame(
         Function to call to renderize the frame.
     points: np.ndarray,
         The points to be rotated and renderized.
+    threshold: float
+        The current threshold position to be used.
     theta: float,
         The amount of rotation.
     args: List,
@@ -97,6 +134,11 @@ def _render_frame(
     path: str,
         The path where to save the frame.
     """
+    if points.shape[1] == 4:
+        points = sliding_space(
+            points,
+            threshold=threshold
+        )
     fig, axis = func(
         rotating_spiral(
             *points.T,
@@ -139,33 +181,33 @@ def rotate(
 
     Parameters
     -----------------------
-    func: Callable,
+    func: Callable
         function return the figure.
-    points: np.ndarray,
-        The 3D array to rotate.
-    path: str,
+    points: np.ndarray
+        The 3D or 4D array to rotate or roto-translate.
+    path: str
         path where to save the GIF.
-    *args,
+    *args
         positional arguments to be passed to the `func` callable.
-    fps: int = 24,
+    fps: int = 24
         number of FPS to create.
-    duration: int = 1,
-        duration of the rotation in seconds.
-    cache_directory: str = ".rotate",
+    duration: int = 1
+        Duration of the rotation in seconds.
+    cache_directory: str = ".rotate"
         directory where to store the frame.
-    parallelize: bool = True,
+    parallelize: bool = True
         whetever to parallelize execution.
-    verbose: bool = False,
+    verbose: bool = False
         whetever to be verbose about frame creation.
-    **kwargs,
+    **kwargs
         keyword argument to be passed to the `func` callable
 
     """
-    if points.shape[1] != 3:
+    if points.shape[1] not in (3, 4):
         raise ValueError(
             (
                 "In order to draw a 3D rotating plot, you need to provide "
-                "a 3D matrix. The one you have provided has shape `{}`."
+                "a 3D or 4D matrix. The one you have provided has shape `{}`."
             ).format(points.shape)
         )
     global conversion_command
@@ -187,7 +229,12 @@ def rotate(
 
     tasks = [
         (
-            func, X, 2 * np.pi * frame / total_frames, args, kwargs,
+            func,
+            X,
+            2*frame / total_frames - 1,
+            2 * np.pi * frame / total_frames,
+            args,
+            kwargs,
             "{cache_directory}/{frame}.jpg".format(
                 cache_directory=cache_directory,
                 frame=frame
