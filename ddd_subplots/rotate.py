@@ -65,8 +65,8 @@ def rotating_spiral(*features: List[np.ndarray], theta: float) -> np.ndarray:
     Numpy array with rotated values.
     """
     features = list(features)
-    for _ in range(len(features)):
-        new_features = rotate_along_last_axis(*features, theta=theta)
+    for i in range(len(features)):
+        new_features = rotate_along_last_axis(*features, theta=theta*(2**i))
         features[-1] = new_features[0]
         features[:-1] = new_features[1:]
     return np.vstack(features)
