@@ -67,7 +67,7 @@ def rotating_spiral(*features: List[np.ndarray], theta: float) -> np.ndarray:
     for i in range(len(features)):
         new_features = rotate_along_last_axis(
             *features,
-            theta=theta*min(2**i, 4)
+            theta=theta*min(2**i, 2)
         )
         features[-1] = new_features[0]
         features[:-1] = new_features[1:]
@@ -115,13 +115,16 @@ def _render_frame(
         *args,
         **kwargs
     )
+    window = 1.0
+    if points.shape[1] > 2:
+        window = 0.3
     axis.set_axis_off()
     axis.set_xticklabels([])
     axis.set_yticklabels([])
-    axis.set_xlim(-1, 1)
-    axis.set_ylim(-1, 1)
+    axis.set_xlim(-window, window)
+    axis.set_ylim(-window, window)
     try:
-        axis.set_zlim(-1, 1)
+        axis.set_zlim(-window, window)
         axis.set_zticklabels([])
     except AttributeError:
         pass
