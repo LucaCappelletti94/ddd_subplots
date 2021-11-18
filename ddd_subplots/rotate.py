@@ -225,10 +225,11 @@ def rotate(
         optimize(path)
     elif path.split(".")[-1] in ("webm", "mp4"):
         height, width, _ = cv2.imread(tasks[0][-1]).shape
-        fourcc = {
-            "mp4": 0x00000021,
-            "webm": cv2.VideoWriter_fourcc(*"vp80")
+        encoding = {
+            "mp4": "MP4V",
+            "webm": "vp80"
         }[path.split(".")[-1]]
+        fourcc = cv2.VideoWriter_fourcc(*encoding)
         video = cv2.VideoWriter(path, fourcc, fps, (width, height))
         for task in tqdm(tasks, desc="Merging frames", disable=not verbose, dynamic_ncols=True, leave=False):
             video.write(cv2.imread(task[-1]))
