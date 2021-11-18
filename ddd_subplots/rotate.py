@@ -226,7 +226,7 @@ def rotate(
     elif path.split(".")[-1] in ("webm", "mp4", "avi"):
         height, width, _ = cv2.imread(tasks[0][-1]).shape
         encoding = {
-            "mp4": "H264",
+            "mp4": "MP4V",
             "avi": "FMP4",
             "webm": "vp80"
         }[path.split(".")[-1]]
