@@ -117,7 +117,7 @@ def _render_frame(
     )
     window = 1.0
     if points.shape[1] > 2:
-        window = 0.5
+        window = 0.66
     axis.set_axis_off()
     axis.set_xticklabels([])
     axis.set_yticklabels([])
