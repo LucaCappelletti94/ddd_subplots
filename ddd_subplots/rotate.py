@@ -226,7 +226,7 @@ def rotate(
     elif path.split(".")[-1] in ("webm", "mp4"):
         height, width, _ = cv2.imread(tasks[0][-1]).shape
         encoding = {
-            "mp4": "H264",
+            "mp4": "avc1",
             "webm": "vp80"
         }[path.split(".")[-1]]
         fourcc = cv2.VideoWriter_fourcc(*encoding)
