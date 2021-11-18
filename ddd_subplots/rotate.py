@@ -7,12 +7,11 @@ from typing import Callable, Dict, List, Tuple, Any
 import imageio
 import matplotlib.pyplot as plt
 import numpy as np
+import cv2
 from numpy.lib.arraysetops import isin
 from pygifsicle import optimize
 from sklearn.preprocessing import MinMaxScaler
 from tqdm.auto import tqdm
-
-conversion_command = """ffmpeg -framerate {fps}  -i "{path}/%d.jpg" -crf 20 -tune animation -preset veryslow -pix_fmt yuv444p10le {output_path} -y"""
 
 
 def chunks(lst, n):
@@ -233,9 +232,12 @@ def rotate(
                 writer.append_data(imageio.imread(task[-1]))
         optimize(path)
     else:
-        os.system(conversion_command.format(
-            fps=fps,
-            output_path=path,
-            path=cache_directory
-        ))
+        height, width, _ = cv2.imread(tasks[0][-1]).shape
+        fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+        video = cv2.VideoWriter(path, fourcc, fps, (width, height))
+        for task in tqdm(tasks, desc="Merging frames", disable=not verbose, dynamic_ncols=True, leave=False):
+            video.write(cv2.imread(task[-1]))
+        cv2.destroyAllWindows()
+        video.release()
+
     shutil.rmtree(cache_directory)
