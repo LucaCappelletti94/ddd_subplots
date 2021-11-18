@@ -243,3 +243,15 @@ def rotate(
         raise ValueError("Unsupported format!")
 
     shutil.rmtree(cache_directory)
+
+    if not os.path.exists(path):
+        raise ValueError(
+            (
+                "The expected target path file `{}` was "
+                "not created. Tipically this is caused by some "
+                "errors in the encoding of the file that has "
+                "been chosen. Please take a look at the log that "
+                "has be printed in either the console or the jupyter "
+                "kernel."
+            ).format(path)
+        )
