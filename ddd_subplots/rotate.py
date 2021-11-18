@@ -176,14 +176,6 @@ def rotate(
     """
     global conversion_command
 
-    is_gif = path.endswith(".gif")
-
-    if not is_gif and shutil.which("ffmpeg") is None:
-        raise ValueError((
-            "The path required is not a gif, so it will be built as a video "
-            "using ffmpeg, but it was not found installed in the system."
-        ))
-
     os.makedirs(cache_directory, exist_ok=True)
     X = MinMaxScaler(
         feature_range=(-1, 1)
@@ -226,18 +218,24 @@ def rotate(
         for task in tqdm(tasks, desc="Rendering frames", disable=not verbose, dynamic_ncols=True, leave=False):
             _render_frame_wrapper([task])
 
-    if is_gif:
+    if path.endswith(".gif"):
         with imageio.get_writer(path, mode='I', fps=fps) as writer:
             for task in tqdm(tasks, desc="Merging frames", disable=not verbose, dynamic_ncols=True, leave=False):
                 writer.append_data(imageio.imread(task[-1]))
         optimize(path)
-    else:
+    elif path.split(".")[-1] in ("webm", "mp4"):
         height, width, _ = cv2.imread(tasks[0][-1]).shape
-        fourcc = cv2.VideoWriter_fourcc(*'vp80')
+        encoding = {
+            "mp4": "H264",
+            "webm": "vp80"
+        }[path.split(".")[-1]]
+        fourcc = cv2.VideoWriter_fourcc(*encoding)
         video = cv2.VideoWriter(path, fourcc, fps, (width, height))
         for task in tqdm(tasks, desc="Merging frames", disable=not verbose, dynamic_ncols=True, leave=False):
             video.write(cv2.imread(task[-1]))
         cv2.destroyAllWindows()
         video.release()
+    else:
+        raise ValueError("Unsupported format!")
 
     shutil.rmtree(cache_directory)
