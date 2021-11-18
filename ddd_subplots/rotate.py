@@ -41,10 +41,10 @@ def rotate_along_last_axis(x: np.ndarray, y: np.ndarray, *features: List[np.ndar
     """
     w = x+1j*y
     return [
-        np.real(np.exp(1j*theta)*w)/np.sqrt(2),
-        np.imag(np.exp(1j*theta)*w)/np.sqrt(2),
+        np.real(np.exp(1j*theta)*w),
+        np.imag(np.exp(1j*theta)*w),
         *[
-            feature/np.sqrt(2)
+            feature
             for feature in features
         ]
     ]
@@ -66,10 +66,16 @@ def rotating_spiral(*features: List[np.ndarray], theta: float) -> np.ndarray:
     """
     features = list(features)
     for i in range(len(features)):
-        new_features = rotate_along_last_axis(*features, theta=theta*min(2**i, 2))
+        new_features = rotate_along_last_axis(
+            *features,
+            theta=theta*min(2**i, 4)
+        )
         features[-1] = new_features[0]
         features[:-1] = new_features[1:]
-    return np.vstack(features)
+    return np.vstack([
+        feature / np.sqrt(2)
+        for feature in features
+    ])
 
 
 def _render_frame(
@@ -113,10 +119,10 @@ def _render_frame(
     axis.set_axis_off()
     axis.set_xticklabels([])
     axis.set_yticklabels([])
-    axis.set_xlim(-0.2, 0.2)
-    axis.set_ylim(-0.2, 0.2)
+    axis.set_xlim(-0.3, 0.3)
+    axis.set_ylim(-0.3, 0.3)
     try:
-        axis.set_zlim(-0.2, 0.2)
+        axis.set_zlim(-0.3, 0.3)
         axis.set_zticklabels([])
     except AttributeError:
         pass
