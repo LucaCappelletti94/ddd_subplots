@@ -4,6 +4,7 @@ pygifsicle
 tqdm
 imageio
 sklearn
+opencv-python
 
 [test]
 pytest
