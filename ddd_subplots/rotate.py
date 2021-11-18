@@ -119,10 +119,10 @@ def _render_frame(
     axis.set_axis_off()
     axis.set_xticklabels([])
     axis.set_yticklabels([])
-    axis.set_xlim(-0.3, 0.3)
-    axis.set_ylim(-0.3, 0.3)
+    axis.set_xlim(-1, 1)
+    axis.set_ylim(-1, 1)
     try:
-        axis.set_zlim(-0.3, 0.3)
+        axis.set_zlim(-1, 1)
         axis.set_zticklabels([])
     except AttributeError:
         pass
