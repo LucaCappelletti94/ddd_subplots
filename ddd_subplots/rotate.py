@@ -1,7 +1,7 @@
 """Package to produce rotating 3d plots."""
 import os
 import shutil
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool, cpu_count, get_context
 from typing import Callable, Dict, List, Tuple, Any
 
 import imageio
@@ -200,7 +200,7 @@ def rotate(
 
     if parallelize:
         number_of_processes = cpu_count()
-        with Pool(number_of_processes) as p:
+        with get_context("spawn").Pool(number_of_processes) as p:
             chunks_size = total_frames // number_of_processes
             loading_bar = tqdm(
                 total=total_frames,
