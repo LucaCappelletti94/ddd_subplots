@@ -223,7 +223,7 @@ def rotate(
             for task in tqdm(tasks, desc="Merging frames", disable=not verbose, dynamic_ncols=True, leave=False):
                 writer.append_data(imageio.imread(task[-1]))
         optimize(path)
-    elif path.split(".")[-1] in ("webm", "mp4"):
+    elif path.split(".")[-1] in ("webm", "mp4", "avi"):
         height, width, _ = cv2.imread(tasks[0][-1]).shape
         encoding = {
             "mp4": "MP4V",
