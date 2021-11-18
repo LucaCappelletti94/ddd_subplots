@@ -8,7 +8,6 @@ import imageio
 import matplotlib.pyplot as plt
 import numpy as np
 import cv2
-from numpy.lib.arraysetops import isin
 from pygifsicle import optimize
 from sklearn.preprocessing import MinMaxScaler
 from tqdm.auto import tqdm
