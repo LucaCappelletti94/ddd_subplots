@@ -233,7 +233,7 @@ def rotate(
         optimize(path)
     else:
         height, width, _ = cv2.imread(tasks[0][-1]).shape
-        fourcc = cv2.VideoWriter_fourcc(*'H264')
+        fourcc = cv2.VideoWriter_fourcc(*'vp80')
         video = cv2.VideoWriter(path, fourcc, fps, (width, height))
         for task in tqdm(tasks, desc="Merging frames", disable=not verbose, dynamic_ncols=True, leave=False):
             video.write(cv2.imread(task[-1]))
