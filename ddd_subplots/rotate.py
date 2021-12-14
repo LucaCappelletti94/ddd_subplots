@@ -14,12 +14,6 @@ from environments_utils import is_macos
 from tqdm.auto import tqdm
 
 
-def chunks(lst, n):
-    """Yield successive n-sized chunks from lst."""
-    for i in range(0, len(lst), n):
-        yield lst[i:i + n]
-
-
 def rotate_along_last_axis(x: np.ndarray, y: np.ndarray, *features: List[np.ndarray], theta: float) -> List[np.ndarray]:
     """Return points rotate along z-axis.
 
@@ -77,7 +71,7 @@ def rotating_spiral(*features: List[np.ndarray], theta: float) -> np.ndarray:
     ])
 
 
-def _render_frame(
+def render_frame(
     func: Callable,
     points: np.ndarray,
     theta: float,
@@ -117,7 +111,7 @@ def _render_frame(
     )
     window = 1.0
     if points.shape[1] > 2:
-        window = 0.66
+        window = 0.6
     axis.set_axis_off()
     axis.set_xticklabels([])
     axis.set_yticklabels([])
@@ -132,13 +126,6 @@ def _render_frame(
     plt.close(fig)
 
 
-def _render_frame_wrapper(tasks: List[Tuple]) -> int:
-    """Wrapper method for rendering frame."""
-    for task in tasks:
-        _render_frame(*task)
-    return len(tasks)
-
-
 def rotate(
     func: Callable,
     points: np.ndarray,
@@ -147,7 +134,6 @@ def rotate(
     fps: int = 24,
     duration: int = 1,
     cache_directory: str = ".rotate",
-    parallelize: bool = True,
     verbose: bool = False,
     **kwargs
 ):
@@ -169,8 +155,6 @@ def rotate(
         Duration of the rotation in seconds.
     cache_directory: str = ".rotate"
         directory where to store the frame.
-    parallelize: bool = True
-        whetever to parallelize execution.
     verbose: bool = False
         whetever to be verbose about frame creation.
     **kwargs
@@ -201,28 +185,14 @@ def rotate(
         for frame in range(total_frames)
     ]
 
-    if parallelize:
-        number_of_processes = cpu_count()
-        if is_macos():
-            pool = get_context("spawn").Pool(number_of_processes)
-        else:
-            pool = Pool(number_of_processes)
-        chunks_size = total_frames // number_of_processes
-        loading_bar = tqdm(
-            total=total_frames,
-            desc="Rendering frames",
-            disable=not verbose,
-            dynamic_ncols=True,
-            leave=False
-        )
-        for executed_tasks_number in pool.imap(_render_frame_wrapper, chunks(tasks, chunks_size)):
-            loading_bar.update(executed_tasks_number)
-        loading_bar.close()
-        pool.close()
-        pool.join()
-    else:
-        for task in tqdm(tasks, desc="Rendering frames", disable=not verbose, dynamic_ncols=True, leave=False):
-            _render_frame_wrapper([task])
+    for task in tqdm(
+        tasks,
+        desc="Rendering frames",
+        disable=not verbose,
+        dynamic_ncols=True,
+        leave=False
+    ):
+        render_frame(**task)
 
     if path.endswith(".gif"):
         with imageio.get_writer(path, mode='I', fps=fps) as writer:
