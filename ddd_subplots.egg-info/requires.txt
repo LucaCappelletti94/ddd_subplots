@@ -5,6 +5,7 @@ tqdm
 imageio
 sklearn
 opencv-python
+environments_utils
 
 [test]
 pytest
