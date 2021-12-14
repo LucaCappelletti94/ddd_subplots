@@ -10,6 +10,7 @@ import numpy as np
 import cv2
 from pygifsicle import optimize
 from sklearn.preprocessing import MinMaxScaler
+from environments_utils import is_macos
 from tqdm.auto import tqdm
 
 
@@ -202,20 +203,23 @@ def rotate(
 
     if parallelize:
         number_of_processes = cpu_count()
-        with get_context("spawn").Pool(number_of_processes) as p:
-            chunks_size = total_frames // number_of_processes
-            loading_bar = tqdm(
-                total=total_frames,
-                desc="Rendering frames",
-                disable=not verbose,
-                dynamic_ncols=True,
-                leave=False
-            )
-            for executed_tasks_number in p.imap(_render_frame_wrapper, chunks(tasks, chunks_size)):
-                loading_bar.update(executed_tasks_number)
-            loading_bar.close()
-            p.close()
-            p.join()
+        if is_macos():
+            pool = get_context("spawn").Pool(number_of_processes)
+        else:
+            pool = Pool(number_of_processes)
+        chunks_size = total_frames // number_of_processes
+        loading_bar = tqdm(
+            total=total_frames,
+            desc="Rendering frames",
+            disable=not verbose,
+            dynamic_ncols=True,
+            leave=False
+        )
+        for executed_tasks_number in pool.imap(_render_frame_wrapper, chunks(tasks, chunks_size)):
+            loading_bar.update(executed_tasks_number)
+        loading_bar.close()
+        pool.close()
+        pool.join()
     else:
         for task in tqdm(tasks, desc="Rendering frames", disable=not verbose, dynamic_ncols=True, leave=False):
             _render_frame_wrapper([task])

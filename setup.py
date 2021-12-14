@@ -29,7 +29,7 @@ def find_version(*file_paths):
 
 __version__ = find_version("ddd_subplots", "__version__.py")
 
-test_deps =[
+test_deps = [
     "pytest",
     "pytest-cov",
     "coveralls",
@@ -61,6 +61,7 @@ setup(
     packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
     tests_require=test_deps,
     # Add here the package dependencies
-    install_requires=["matplotlib", "numpy", "pygifsicle", "tqdm", "imageio", "sklearn", "opencv-python"],
+    install_requires=["matplotlib", "numpy", "pygifsicle", "tqdm",
+                      "imageio", "sklearn", "opencv-python", "environments_utils"],
     extras_require=extras,
 )
