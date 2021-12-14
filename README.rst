@@ -67,23 +67,6 @@ Output:
 .. image:: https://github.com/LucaCappelletti94/ddd_subplots/blob/master/test.gif?raw=true
 
 
-Known limits
-----------------------------------------------
-There is an error with `CoreFoundations and multiprocessing on MacOS <https://turtlemonvh.github.io/python-multiprocessing-and-corefoundation-libraries.html>`_, which states the following:
-
-.. code:: bash
-
-    The process has forked and you cannot use this CoreFoundation functionality safely. You MUST exec().
-    Break on __THE_PROCESS_HAS_FORKED_AND_YOU_CANNOT_USE_THIS_COREFOUNDATION_FUNCTIONALITY___YOU_MUST_EXEC__() to debug.
-
-This is a weird known error of MacOS Sierra. For now, the only available solution is to disable multiprocessing when dealing with matplotlib.
-Any alternative valid solutions are welcome:
-
-.. code:: python
-
-    rotate(my_func, *X_reduced.T, path="test.gif",
-        duration=2, fps=24, parallelize=False, c=colors, marker='o', s=20)
-
 .. |travis| image:: https://travis-ci.org/LucaCappelletti94/ddd_subplots.png
    :target: https://travis-ci.org/LucaCappelletti94/ddd_subplots
    :alt: Travis CI build
