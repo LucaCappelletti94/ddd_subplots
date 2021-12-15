@@ -192,7 +192,7 @@ def rotate(
         dynamic_ncols=True,
         leave=False
     ):
-        render_frame(**task)
+        render_frame(*task)
 
     if path.endswith(".gif"):
         with imageio.get_writer(path, mode='I', fps=fps) as writer:
