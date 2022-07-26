@@ -1,8 +1,7 @@
 """Package to produce rotating 3d plots."""
 import os
 import shutil
-from multiprocessing import Pool, cpu_count, get_context
-from typing import Callable, Dict, List, Tuple, Any
+from typing import Callable, Dict, List
 
 import imageio
 import matplotlib.pyplot as plt
@@ -10,7 +9,6 @@ import numpy as np
 import cv2
 from pygifsicle import optimize
 from sklearn.preprocessing import MinMaxScaler
-from environments_utils import is_macos
 from tqdm.auto import tqdm
 
 

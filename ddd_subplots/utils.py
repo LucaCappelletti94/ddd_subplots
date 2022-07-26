@@ -20,7 +20,7 @@ def display_video_at_path(path: str, height: int = 480, width: int = 480):
         return HTML(
             (
                 "<center>"
-                "<video width=\"{width}\" height=\"{height}\" autoplay loop>"
+                "<video width=\"{width}\" height=\"{height}\" src=\"{path}\" autoplay muted playsinline loop>"
                 "<source src=\"{path}\" type=\"video/{extension}\" />"
                 "Your browser does not support the video tag."
                 "</video>"
