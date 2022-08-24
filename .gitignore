@@ -9,3 +9,5 @@
 .notipy.json
 .coverage*
 *.webm
+*.egg-info
+build
