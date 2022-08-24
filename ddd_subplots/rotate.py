@@ -1,15 +1,16 @@
 """Package to produce rotating 3d plots."""
 import os
-import shutil
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Optional
 
 import imageio
 import matplotlib.pyplot as plt
+from matplotlib.axis import Axis
+from matplotlib.axes import Axes
 import numpy as np
 import cv2
 from pygifsicle import optimize
 from sklearn.preprocessing import MinMaxScaler
-from tqdm.auto import tqdm
+from tqdm.auto import trange
 
 
 def rotate_along_last_axis(x: np.ndarray, y: np.ndarray, *features: List[np.ndarray], theta: float) -> List[np.ndarray]:
@@ -74,8 +75,8 @@ def render_frame(
     points: np.ndarray,
     theta: float,
     args: List,
-    kwargs: Dict,
-    path: str
+    path: str,
+    **kwargs,
 ):
     """Method for rendering frame.
 
@@ -89,10 +90,10 @@ def render_frame(
         The amount of rotation.
     args: List,
         The list of positional arguments.
-    kwargs: Dict,
-        The dictionary of keywargs arguments.
     path: str,
         The path where to save the frame.
+    kwargs: Dict,
+        The dictionary of keywargs arguments.
     """
     points = rotating_spiral(
         *points.T,
@@ -102,24 +103,39 @@ def render_frame(
     if points.shape[1] > 3:
         points = points[:, :3]
 
-    fig, axis = func(
+    returned_value = func(
         points,
         *args,
         **kwargs
     )
+
+    if not isinstance(returned_value, tuple):
+        raise ValueError(
+            "The provided rendering function does not return "
+            "a tuple with figure and axes!"
+        )
+
+    fig, axis = returned_value
+
     window = 1.0
     if points.shape[1] > 2:
         window = 0.6
-    axis.set_axis_off()
-    axis.set_xticklabels([])
-    axis.set_yticklabels([])
-    axis.set_xlim(-window, window)
-    axis.set_ylim(-window, window)
-    try:
-        axis.set_zlim(-window, window)
-        axis.set_zticklabels([])
-    except AttributeError:
-        pass
+
+    if isinstance(axis, (Axes, Axis)):
+        axis = np.array([axis])
+
+    for ax in axis.flatten():
+        ax.set_axis_off()
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        ax.set_xlim(-window, window)
+        ax.set_ylim(-window, window)
+        try:
+            ax.set_zlim(-window, window)
+            ax.set_zticklabels([])
+        except AttributeError:
+            pass
+
     fig.savefig(path)
     plt.close(fig)
 
@@ -131,7 +147,6 @@ def rotate(
     *args,
     fps: int = 24,
     duration: int = 1,
-    cache_directory: str = ".rotate",
     verbose: bool = False,
     **kwargs
 ):
@@ -151,8 +166,6 @@ def rotate(
         number of FPS to create.
     duration: int = 1
         Duration of the rotation in seconds.
-    cache_directory: str = ".rotate"
-        directory where to store the frame.
     verbose: bool = False
         whetever to be verbose about frame creation.
     **kwargs
@@ -161,59 +174,74 @@ def rotate(
     """
     global conversion_command
 
-    os.makedirs(cache_directory, exist_ok=True)
-    X = MinMaxScaler(
+    if os.path.dirname(path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+
+    if os.path.exists(path):
+        os.remove(path)
+
+    scaled_points = MinMaxScaler(
         feature_range=(-1, 1)
     ).fit_transform(points)
 
     total_frames = duration*fps
 
-    tasks = [
-        (
-            func,
-            X,
-            2 * np.pi * frame / total_frames,
-            args,
-            kwargs,
-            "{cache_directory}/{frame}.jpg".format(
-                cache_directory=cache_directory,
-                frame=frame
-            )
-        )
-        for frame in range(total_frames)
-    ]
+    is_gif = path.endswith(".gif")
+    is_video = path.split(".")[-1] in ("webm", "mp4", "avi")
 
-    for task in tqdm(
-        tasks,
-        desc="Rendering frames",
-        disable=not verbose,
-        dynamic_ncols=True,
-        leave=False
-    ):
-        render_frame(*task)
-
-    if path.endswith(".gif"):
-        with imageio.get_writer(path, mode='I', fps=fps) as writer:
-            for task in tqdm(tasks, desc="Merging frames", disable=not verbose, dynamic_ncols=True, leave=False):
-                writer.append_data(imageio.imread(task[-1]))
-        optimize(path)
-    elif path.split(".")[-1] in ("webm", "mp4", "avi"):
-        height, width, _ = cv2.imread(tasks[0][-1]).shape
+    if is_gif:
+        gif_writer = imageio.get_writer(path, mode='I', fps=fps)
+    elif is_video:
         encoding = {
             "mp4": "MP4V",
             "avi": "FMP4",
             "webm": "vp80"
         }[path.split(".")[-1]]
         fourcc = cv2.VideoWriter_fourcc(*encoding)
-        video = cv2.VideoWriter(path, fourcc, fps, (width, height))
-        for task in tqdm(tasks, desc="Merging frames", disable=not verbose, dynamic_ncols=True, leave=False):
-            video.write(cv2.imread(task[-1]))
-        cv2.destroyAllWindows()
-        video.release()
     else:
         raise ValueError("Unsupported format!")
 
-    shutil.rmtree(cache_directory)
+    for frame in trange(
+        total_frames,
+        desc="Rendering",
+        disable=not verbose,
+        dynamic_ncols=True,
+        leave=False
+    ):
+        frame_path = "{path}.{frame}.tmp.jpg".format(
+            path=path,
+            frame=frame
+        )
+
+        rate = frame / total_frames
+
+        render_frame(
+            func=func,
+            points=scaled_points,
+            theta=2 * np.pi * rate,
+            args=args,
+            path=frame_path,
+            **kwargs
+        )
+
+        if is_gif:
+            gif_writer.append_data(imageio.imread(frame_path))
+        else:
+            # If this is the first frame
+            if frame == 0:
+                height, width, _ = cv2.imread(frame_path).shape
+                video_writer = cv2.VideoWriter(
+                    path, fourcc, fps, (width, height))
+            video_writer.write(cv2.imread(frame_path))
+
+        # And we clean up the path.
+        os.remove(frame_path)
+
+    if is_gif:
+        optimize(path)
+    else:
+        cv2.destroyAllWindows()
+        video_writer.release()
 
     if not os.path.exists(path):
         raise ValueError(
