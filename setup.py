@@ -61,7 +61,7 @@ setup(
     packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
     tests_require=test_deps,
     # Add here the package dependencies
-    install_requires=["matplotlib", "numpy", "pygifsicle", "tqdm",
+    install_requires=["matplotlib", "numpy", "pygifsicle", "tqdm", "support_developer",
                       "imageio", "sklearn", "opencv-python", "environments_utils"],
     extras_require=extras,
 )
