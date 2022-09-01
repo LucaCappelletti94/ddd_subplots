@@ -1,6 +1,6 @@
 """Package to produce rotating 3d plots."""
 import os
-from typing import Callable, Dict, List, Optional
+from typing import Callable, List, Union
 
 import imageio
 import matplotlib.pyplot as plt
@@ -72,7 +72,7 @@ def rotating_spiral(*features: List[np.ndarray], theta: float) -> np.ndarray:
 
 def render_frame(
     func: Callable,
-    points: np.ndarray,
+    points: Union[np.ndarray, List[np.ndarray]],
     theta: float,
     args: List,
     path: str,
@@ -84,7 +84,7 @@ def render_frame(
     -----------------------
     func: Callable,
         Function to call to renderize the frame.
-    points: np.ndarray,
+    points: Union[np.ndarray, List[np.ndarray]],
         The points to be rotated and renderized.
     theta: float,
         The amount of rotation.
@@ -95,16 +95,23 @@ def render_frame(
     kwargs: Dict,
         The dictionary of keywargs arguments.
     """
-    points = rotating_spiral(
-        *points.T,
-        theta=theta
-    ).T
+    points = [
+        rotating_spiral(
+            *matrix.T,
+            theta=theta
+        ).T
+        for matrix in points
+    ]
 
-    if points.shape[1] > 3:
-        points = points[:, :3]
+    points = [
+        matrix[:, :3]
+        if matrix.shape[1] > 3
+        else matrix
+        for matrix in points
+    ]
 
     returned_value = func(
-        points,
+        points[0] if len(points) == 1 else points,
         *args,
         **kwargs
     )
@@ -118,7 +125,10 @@ def render_frame(
     fig, axis = returned_value
 
     window = 1.0
-    if points.shape[1] > 2:
+    if any([
+        matrix.shape[1] > 2
+        for matrix in points
+    ]):
         window = 0.6
 
     if isinstance(axis, (Axes, Axis)):
@@ -142,7 +152,7 @@ def render_frame(
 
 def rotate(
     func: Callable,
-    points: np.ndarray,
+    points: Union[np.ndarray, List[np.ndarray]],
     path: str,
     *args,
     fps: int = 24,
@@ -156,7 +166,7 @@ def rotate(
     -----------------------
     func: Callable
         function return the figure.
-    points: np.ndarray
+    points: Union[np.ndarray, List[np.ndarray]]
         The 3D or 4D array to rotate or roto-translate.
     path: str
         path where to save the GIF.
@@ -180,9 +190,15 @@ def rotate(
     if os.path.exists(path):
         os.remove(path)
 
-    scaled_points = MinMaxScaler(
-        feature_range=(-1, 1)
-    ).fit_transform(points)
+    if not isinstance(points, list):
+        points = [points]
+
+    scaled_points = [
+        MinMaxScaler(
+            feature_range=(-1, 1)
+        ).fit_transform(matrix)
+        for matrix in points
+    ]
 
     total_frames = duration*fps
 
