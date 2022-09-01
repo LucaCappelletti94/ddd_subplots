@@ -122,7 +122,7 @@ def render_frame(
             "a tuple with figure and axes!"
         )
 
-    fig, axis = returned_value
+    fig, axis = returned_value[:2]
 
     window = 1.0
     if any([
