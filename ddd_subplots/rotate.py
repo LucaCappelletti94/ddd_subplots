@@ -140,6 +140,9 @@ def render_frame(
         ax.set_yticklabels([])
         ax.set_xlim(-window, window)
         ax.set_ylim(-window, window)
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+        ax.axis("off")
         try:
             ax.set_zlim(-window, window)
             ax.set_zticklabels([])
