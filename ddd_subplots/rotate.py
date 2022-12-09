@@ -3,6 +3,7 @@ import os
 from typing import Callable, List, Union
 
 import imageio
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import matplotlib.pyplot as plt
 from matplotlib.axis import Axis
 from matplotlib.axes import Axes
@@ -75,10 +76,9 @@ def render_frame(
     points: Union[np.ndarray, List[np.ndarray]],
     theta: float,
     args: List,
-    path: str,
     **kwargs,
-):
-    """Method for rendering frame.
+) -> np.ndarray:
+    """Returns rendered frame.
 
     Parameters
     -----------------------
@@ -90,8 +90,6 @@ def render_frame(
         The amount of rotation.
     args: List,
         The list of positional arguments.
-    path: str,
-        The path where to save the frame.
     kwargs: Dict,
         The dictionary of keywargs arguments.
     """
@@ -123,6 +121,7 @@ def render_frame(
         )
 
     fig, axis = returned_value[:2]
+    canvas = FigureCanvas(fig)
 
     window = 1.0
     if any([
@@ -149,8 +148,16 @@ def render_frame(
         except AttributeError:
             pass
 
-    fig.savefig(path)
+    canvas.draw()       # draw the canvas, cache the renderer
     plt.close(fig)
+    plt.close()
+
+    width, height = fig.get_size_inches() * fig.get_dpi()
+
+    return np.fromstring(
+        canvas.tostring_rgb(),
+        dtype='uint8'
+    ).reshape(int(height), int(width), 3)
 
 
 def rotate(
@@ -185,8 +192,6 @@ def rotate(
         keyword argument to be passed to the `func` callable
 
     """
-    global conversion_command
-
     if os.path.dirname(path):
         os.makedirs(os.path.dirname(path), exist_ok=True)
 
@@ -227,34 +232,24 @@ def rotate(
         dynamic_ncols=True,
         leave=False
     ):
-        frame_path = "{path}.{frame}.tmp.jpg".format(
-            path=path,
-            frame=frame
-        )
-
-        rate = frame / total_frames
-
-        render_frame(
+        rendered_frame = render_frame(
             func=func,
             points=scaled_points,
-            theta=2 * np.pi * rate,
+            theta=2 * np.pi * frame / total_frames,
             args=args,
-            path=frame_path,
             **kwargs
         )
 
         if is_gif:
-            gif_writer.append_data(imageio.imread(frame_path))
+            gif_writer.append_data(rendered_frame)
         else:
             # If this is the first frame
             if frame == 0:
-                height, width, _ = cv2.imread(frame_path).shape
+                height, width, _ = rendered_frame.shape
                 video_writer = cv2.VideoWriter(
-                    path, fourcc, fps, (width, height))
-            video_writer.write(cv2.imread(frame_path))
-
-        # And we clean up the path.
-        os.remove(frame_path)
+                    path, fourcc, fps, (width, height)
+                )
+            video_writer.write(rendered_frame)
 
     if is_gif:
         optimize(path)
