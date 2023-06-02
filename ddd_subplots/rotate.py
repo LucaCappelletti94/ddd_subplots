@@ -191,6 +191,12 @@ def rotate(
     **kwargs
         keyword argument to be passed to the `func` callable
 
+    Raises
+    -----------------------
+    ValueError
+        If the provided points cloud is None.
+    ValueError
+        If the provided points cloud is not a numpy array.
     """
     if os.path.dirname(path):
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -200,6 +206,17 @@ def rotate(
 
     if not isinstance(points, list):
         points = [points]
+
+    for i, points_cloud in enumerate(points):
+        if points_cloud is None:
+            raise ValueError(
+                f"The provided points cloud at index {i} is None!"
+            )
+        if not isinstance(points_cloud, np.ndarray):
+            raise ValueError(
+                f"The provided points cloud at index {i} is not a numpy array! "
+                f"Instead it is a {type(points_cloud)}!"
+            )
 
     scaled_points = [
         MinMaxScaler(
@@ -223,7 +240,11 @@ def rotate(
         }[path.split(".")[-1]]
         fourcc = cv2.VideoWriter_fourcc(*encoding)
     else:
-        raise ValueError("Unsupported format!")
+        raise ValueError(
+            "The provided format, as detected from the provided "
+            "path extension, is not supported! "
+            f"The path you have provided is `{path}`."
+        )
 
     for frame in trange(
         total_frames,
