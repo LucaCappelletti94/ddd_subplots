@@ -149,15 +149,24 @@ def render_frame(
             pass
 
     canvas.draw()       # draw the canvas, cache the renderer
-    plt.close(fig)
-    plt.close()
 
     width, height = fig.get_size_inches() * fig.get_dpi()
 
-    return np.fromstring(
-        canvas.tostring_rgb(),
-        dtype='uint8'
-    ).reshape(int(height), int(width), 3)
+    # return np.fromstring(
+    #     canvas.tostring_rgb(),
+    #     dtype='uint8'
+    # ).reshape(int(height), int(width), 3)
+
+    data = np.frombuffer(canvas.tostring_rgb(), dtype=np.uint8).reshape(
+        int(height),
+        int(width),
+        3
+    )
+
+    plt.close(fig)
+    plt.close()
+
+    return data
 
 
 def rotate(
