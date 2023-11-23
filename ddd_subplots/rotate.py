@@ -1,5 +1,6 @@
 """Package to produce rotating 3d plots."""
 import os
+import warnings
 from typing import Callable, List, Union
 
 import imageio
@@ -9,12 +10,13 @@ from matplotlib.axis import Axis
 from matplotlib.axes import Axes
 import numpy as np
 import cv2
-from pygifsicle import optimize
 from sklearn.preprocessing import MinMaxScaler
 from tqdm.auto import trange
 
 
-def rotate_along_last_axis(x: np.ndarray, y: np.ndarray, *features: List[np.ndarray], theta: float) -> List[np.ndarray]:
+def rotate_along_last_axis(
+    x: np.ndarray, y: np.ndarray, *features: List[np.ndarray], theta: float
+) -> List[np.ndarray]:
     """Return points rotate along z-axis.
 
     Parameters
@@ -32,14 +34,11 @@ def rotate_along_last_axis(x: np.ndarray, y: np.ndarray, *features: List[np.ndar
     ----------------------
     Tuple with rotated values.
     """
-    w = x+1j*y
+    w = x + 1j * y
     return [
-        np.real(np.exp(1j*theta)*w),
-        np.imag(np.exp(1j*theta)*w),
-        *[
-            feature
-            for feature in features
-        ]
+        np.real(np.exp(1j * theta) * w),
+        np.imag(np.exp(1j * theta) * w),
+        *[feature for feature in features],
     ]
 
 
@@ -59,16 +58,12 @@ def rotating_spiral(*features: List[np.ndarray], theta: float) -> np.ndarray:
     """
     features = list(features)
     for i in range(len(features)):
-        new_features = rotate_along_last_axis(
-            *features,
-            theta=theta*min(2**i, 2)
+        new_features = rotate_along_last_axis( # pylint: disable=no-value-for-parameter
+            *features, theta=theta * min(2**i, 2)
         )
         features[-1] = new_features[0]
         features[:-1] = new_features[1:]
-    return np.vstack([
-        feature / np.sqrt(2)
-        for feature in features
-    ])
+    return np.vstack([feature / np.sqrt(2) for feature in features])
 
 
 def render_frame(
@@ -93,26 +88,11 @@ def render_frame(
     kwargs: Dict,
         The dictionary of keywargs arguments.
     """
-    points = [
-        rotating_spiral(
-            *matrix.T,
-            theta=theta
-        ).T
-        for matrix in points
-    ]
+    points = [rotating_spiral(*matrix.T, theta=theta).T for matrix in points]
 
-    points = [
-        matrix[:, :3]
-        if matrix.shape[1] > 3
-        else matrix
-        for matrix in points
-    ]
+    points = [matrix[:, :3] if matrix.shape[1] > 3 else matrix for matrix in points]
 
-    returned_value = func(
-        points[0] if len(points) == 1 else points,
-        *args,
-        **kwargs
-    )
+    returned_value = func(points[0] if len(points) == 1 else points, *args, **kwargs)
 
     if not isinstance(returned_value, tuple):
         raise ValueError(
@@ -124,10 +104,7 @@ def render_frame(
     canvas = FigureCanvas(fig)
 
     window = 1.0
-    if any([
-        matrix.shape[1] > 2
-        for matrix in points
-    ]):
+    if any([matrix.shape[1] > 2 for matrix in points]):
         window = 0.6
 
     if isinstance(axis, (Axes, Axis)):
@@ -148,19 +125,12 @@ def render_frame(
         except AttributeError:
             pass
 
-    canvas.draw()       # draw the canvas, cache the renderer
+    canvas.draw()  # draw the canvas, cache the renderer
 
     width, height = fig.get_size_inches() * fig.get_dpi()
 
-    # return np.fromstring(
-    #     canvas.tostring_rgb(),
-    #     dtype='uint8'
-    # ).reshape(int(height), int(width), 3)
-
     data = np.frombuffer(canvas.tostring_rgb(), dtype=np.uint8).reshape(
-        int(height),
-        int(width),
-        3
+        int(height), int(width), 3
     )
 
     plt.close(fig)
@@ -177,7 +147,7 @@ def rotate(
     fps: int = 24,
     duration: int = 1,
     verbose: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """Create rotating gif of given image.
 
@@ -218,9 +188,7 @@ def rotate(
 
     for i, points_cloud in enumerate(points):
         if points_cloud is None:
-            raise ValueError(
-                f"The provided points cloud at index {i} is None!"
-            )
+            raise ValueError(f"The provided points cloud at index {i} is None!")
         if not isinstance(points_cloud, np.ndarray):
             raise ValueError(
                 f"The provided points cloud at index {i} is not a numpy array! "
@@ -228,26 +196,19 @@ def rotate(
             )
 
     scaled_points = [
-        MinMaxScaler(
-            feature_range=(-1, 1)
-        ).fit_transform(matrix)
-        for matrix in points
+        MinMaxScaler(feature_range=(-1, 1)).fit_transform(matrix) for matrix in points
     ]
 
-    total_frames = duration*fps
+    total_frames = duration * fps
 
     is_gif = path.endswith(".gif")
     is_video = path.split(".")[-1] in ("webm", "mp4", "avi")
 
     if is_gif:
-        gif_writer = imageio.get_writer(path, mode='I', fps=fps)
+        gif_writer = imageio.get_writer(path, mode="I", fps=fps)
     elif is_video:
-        encoding = {
-            "mp4": "MP4V",
-            "avi": "FMP4",
-            "webm": "vp80"
-        }[path.split(".")[-1]]
-        fourcc = cv2.VideoWriter_fourcc(*encoding)
+        encoding = {"mp4": "MP4V", "avi": "FMP4", "webm": "vp80"}[path.split(".")[-1]]
+        fourcc = cv2.VideoWriter_fourcc(*encoding)  # pylint: disable=no-member
     else:
         raise ValueError(
             "The provided format, as detected from the provided "
@@ -260,14 +221,14 @@ def rotate(
         desc="Rendering",
         disable=not verbose,
         dynamic_ncols=True,
-        leave=False
+        leave=False,
     ):
         rendered_frame = render_frame(
             func=func,
             points=scaled_points,
             theta=2 * np.pi * frame / total_frames,
             args=args,
-            **kwargs
+            **kwargs,
         )
 
         if is_gif:
@@ -276,25 +237,37 @@ def rotate(
             # If this is the first frame
             if frame == 0:
                 height, width, _ = rendered_frame.shape
-                video_writer = cv2.VideoWriter(
+                video_writer = cv2.VideoWriter(  # pylint: disable=no-member
                     path, fourcc, fps, (width, height)
                 )
             video_writer.write(rendered_frame)
 
     if is_gif:
-        optimize(path)
+        try:
+            from pygifsicle import optimize  # pylint: disable=import-outside-toplevel
+
+            optimize(path)
+        except ImportError:
+            warnings.warn(
+                "The `pygifsicle` package is not installed. "
+                "It is not possible to optimize the GIF "
+                "file size, which might be very large. "
+                "Considering installing it with `pip install pygifsicle`, "
+                "which will require `gifsicle` to be installed "
+                "in your system."
+            )
     else:
-        cv2.destroyAllWindows()
+        cv2.destroyAllWindows()  # pylint: disable=no-member
         video_writer.release()
 
     if not os.path.exists(path):
         raise ValueError(
             (
-                "The expected target path file `{}` was "
+                f"The expected target path file `{path}` was "
                 "not created. Tipically this is caused by some "
                 "errors in the encoding of the file that has "
                 "been chosen. Please take a look at the log that "
                 "has be printed in either the console or the jupyter "
                 "kernel."
-            ).format(path)
+            )
         )
